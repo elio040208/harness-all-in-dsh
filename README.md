@@ -37,7 +37,8 @@
 - ReSum：已接入。在上下文压力达到 90% 时压缩全部非 system 历史，Session 保留完整事件轨迹，下一步从持久化 checkpoint 继续。
 - Flash-Searcher：已接入。结构化 DAG 记录 1–5 个 goal、依赖和顺序 fallback path；DSH 最多并发执行 5 个跨 goal 调用，并默认每 8 步要求一次完整图 review。
 - GAM：已接入。完整工具结果进入持久 page store，模型为每页写 abstract；默认每 4 个 action step 检索并整合相关页面，再以 integrated memory 替换工作 surface。
-- 其余 8 项：按 Table 1 顺序逐项研究和实现。
+- MemoBrain：已接入。每个完整 tool episode 由辅助模型被动写入 task/subtask/evidence 依赖图；工作上下文达到 25% 时自动 flush 无效节点、fold 已完成路径，并保护首尾上下文生成新 checkpoint。
+- 其余 7 项：按 Table 1 顺序逐项研究和实现。
 
 安装到从 `headless` 模板创建的 profile 后即可运行：
 

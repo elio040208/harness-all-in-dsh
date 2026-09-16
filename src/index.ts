@@ -36,3 +36,23 @@ export {
   renderGamPrompt,
 } from './harnesses/gam.js'
 export type { GamConfig, GamPage, GamState } from './harnesses/gam.js'
+export {
+  MEMOBRAIN_PROJECTION_KEY,
+  applyMemoGraphPatch,
+  applyMemoRecall,
+  foldMemoBrainState,
+  initialMemoBrainState,
+  memoBrainProjectionDefinition,
+  renderMemoCheckpoint,
+  renderMemoGraph,
+} from './harnesses/memobrain.js'
+export type {
+  MemoBrainConfig,
+  MemoBrainState,
+  MemoEdge,
+  MemoEpisode,
+  MemoGraphPatch,
+  MemoNode,
+  MemoNote,
+  MemoRecallPatch,
+} from './harnesses/memobrain.js'

@@ -6,6 +6,7 @@ import type { ProjectionDefinition } from '@deepseek-ai/dsh-session-projection'
 import type { ToolDefinition, ToolExecution } from '@deepseek-ai/dsh-tools'
 import { z } from 'zod'
 import { applyFlashSearcher } from './flash-searcher.js'
+import { contentText } from '../runtime/content.js'
 import { registerHarnessPrompt } from '../runtime/prompt.js'
 
 const MEMORIZE_TOOL = 'gam_memorize_pages'
@@ -81,16 +82,6 @@ function nonEmpty(value: unknown): value is string {
 
 function managementTool(name: string): boolean {
   return name === 'submit_dag_plan' || name === 'record_dag_review' || name.startsWith('gam_')
-}
-
-function resultText(value: unknown): string {
-  if (typeof value === 'string') return value
-  if (Array.isArray(value)) return value.map(resultText).filter(Boolean).join('\n')
-  if (typeof value !== 'object' || value === null) return String(value ?? '')
-  const record = value as Record<string, unknown>
-  if (typeof record.text === 'string') return record.text
-  if ('content' in record) return resultText(record.content)
-  return JSON.stringify(value)
 }
 
 function abstractEntries(value: unknown, pages: readonly GamPage[]): readonly { pageId: string; abstract: string }[] | undefined {
@@ -174,7 +165,7 @@ export function foldGamState(state: GamState, event: SessionEvent): GamState {
         step: pending.step,
         tool: pending.tool,
         arguments: pending.arguments,
-        content: resultText(block.content),
+        content: contentText(block.content),
         isError: block.isError === true,
         abstract: null,
       }],
@@ -186,7 +177,7 @@ export function foldGamState(state: GamState, event: SessionEvent): GamState {
   }
   if (event.type === 'user/message') {
     if (event.data.source.kind === 'user' && state.originalTask === null) {
-      return { ...state, originalTask: resultText(event.data.content) }
+      return { ...state, originalTask: contentText(event.data.content) }
     }
     if (event.data.source.kind === 'plugin' && event.data.source.plugin === GAM_SOURCE) {
       return { ...state, foldedAt: state.integratedAt }
