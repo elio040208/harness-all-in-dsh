@@ -32,6 +32,17 @@
 
 ## 当前状态
 
-项目骨架已建立。`src/catalog.ts` 是 13 个 Harness 的唯一清单；下一阶段先实现共同的运行记录和测试夹具，再按机制族逐个移植。
+- ReAct：已接入。复用 DSH 原生 `ReactLoopAgent`，保留完整历史和任务工具，关闭会改变该固定 Harness 的压缩、显式规划与递归委派机制。
+- 其余 12 项：按 Table 1 顺序逐项研究和实现。
+
+安装到从 `headless` 模板创建的 profile 后即可运行：
+
+```sh
+dsh --profile harness-react --from-default-profile headless --dump-config
+dsh plugin --profile harness-react add /absolute/path/to/harness-all-in-dsh
+dsh --profile harness-react "your task"
+```
+
+源码安装会执行 `prepare` 构建；从 GitHub 安装时需要按 DSH 提示允许该构建脚本。ReAct 的原始实现、固定 revision 与有意偏差记录在 [research/react.md](research/react.md)。
 
 研究来源见 [research/SOURCES.md](research/SOURCES.md)，总体架构见 [docs/architecture.md](docs/architecture.md)。

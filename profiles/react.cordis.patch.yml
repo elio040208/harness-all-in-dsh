@@ -1,0 +1,4 @@
+# Apply after installing this bundle into a profile cloned from `headless`.
+- id: harness-all-in-dsh
+  config:
+    harness: react

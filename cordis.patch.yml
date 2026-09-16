@@ -1,0 +1,59 @@
+# Shared fixed-harness layer. Target-specific behavior is selected by the
+# harness-all-in-dsh plugin config; this layer removes DSH mechanisms that
+# would otherwise silently turn the selected fixed harness into a hybrid.
+
+- id: agent-loop
+  config:
+    maxParallelToolCalls: 1
+    agents: []
+
+- id: plan-mode
+  disabled: true
+
+- id: goal-round-driver
+  disabled: true
+
+- id: command-goal
+  disabled: true
+
+- id: tool-goal
+  disabled: true
+
+- id: tool-todo
+  disabled: true
+
+- id: compaction-basic
+  disabled: true
+
+- id: command-compact
+  disabled: true
+
+- id: tool-result-pruner
+  disabled: true
+
+- id: image-offload
+  disabled: true
+
+- id: tool-subagent-control
+  disabled: true
+
+- id: tool-subagent-list-agents
+  disabled: true
+
+- id: tool-subagent
+  disabled: true
+
+- id: tool-subagent-fork
+  disabled: true
+
+- id: tool-workflow
+  disabled: true
+
+- id: tool-ralph
+  disabled: true
+
+- insert:
+    - id: harness-all-in-dsh
+      name: harness-all-in-dsh
+      config:
+        harness: react
