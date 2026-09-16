@@ -1,0 +1,12 @@
+- id: harness-all-in-dsh
+  config:
+    harness: roma
+    romaMaxDepth: 2
+    romaMaxNodes: 15
+    romaMaxChildren: 4
+    romaMaxParallel: 4
+    auxiliaryMaxTokens: 8192
+
+- id: agent-loop
+  config:
+    maxParallelToolCalls: 1

@@ -92,6 +92,8 @@ export {
   renderDeepAgentCheckpoint,
 } from './harnesses/deepagent.js'
 export type { DeepAgentConfig, DeepAgentFold, DeepAgentState } from './harnesses/deepagent.js'
+export { applyRoma, parseRomaAtomizer, parseRomaPlan } from './harnesses/roma.js'
+export type { RomaConfig, RomaNode, RomaPlannedTask } from './harnesses/roma.js'
 export { foldToolEpisodes, initialToolEpisodeCollection } from './runtime/tool-episodes.js'
 export type { ToolEpisode, ToolEpisodeAction, ToolEpisodeCollection } from './runtime/tool-episodes.js'
 export type {

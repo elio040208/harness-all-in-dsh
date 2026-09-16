@@ -11,6 +11,7 @@ import { applyOAgent } from './harnesses/oagent.js'
 import { applyPlanAndExecute } from './harnesses/plan-and-execute.js'
 import { applyReact } from './harnesses/react.js'
 import { applyReSum } from './harnesses/resum.js'
+import { applyRoma } from './harnesses/roma.js'
 
 /** Cordis loader name for the fixed-harness selector plugin. */
 export const name = 'harness-all-in-dsh'
@@ -20,7 +21,7 @@ export const inject = ['sessionProjections', 'systemPrompt', 'tools']
 
 /** Fixed Harness selection. More ids become valid only after their implementation lands. */
 export interface Config {
-  readonly harness?: 'react' | 'plan-and-execute' | 'resum' | 'flash-searcher' | 'gam' | 'memobrain' | 'aggagent' | 'oagent' | 'agentfold' | 'hiagent' | 'deepagent'
+  readonly harness?: 'react' | 'plan-and-execute' | 'resum' | 'flash-searcher' | 'gam' | 'memobrain' | 'aggagent' | 'oagent' | 'agentfold' | 'hiagent' | 'deepagent' | 'roma'
   readonly summaryInterval?: number
   readonly reorgInterval?: number
   readonly memoryThresholdRatio?: number
@@ -33,11 +34,15 @@ export interface Config {
   readonly controllerReminderLimit?: number
   readonly hiAgentMemorySize?: number
   readonly deepAgentMaxFolds?: number
+  readonly romaMaxDepth?: number
+  readonly romaMaxNodes?: number
+  readonly romaMaxChildren?: number
+  readonly romaMaxParallel?: number
 }
 
 /** Load-time validation for the implemented Harness set. */
 export const Config: z<Config> = z.object({
-  harness: z.union(['react', 'plan-and-execute', 'resum', 'flash-searcher', 'gam', 'memobrain', 'aggagent', 'oagent', 'agentfold', 'hiagent', 'deepagent'] as const).default('react'),
+  harness: z.union(['react', 'plan-and-execute', 'resum', 'flash-searcher', 'gam', 'memobrain', 'aggagent', 'oagent', 'agentfold', 'hiagent', 'deepagent', 'roma'] as const).default('react'),
   summaryInterval: z.number().default(8),
   reorgInterval: z.number().default(4),
   memoryThresholdRatio: z.number().default(0.25),
@@ -50,6 +55,10 @@ export const Config: z<Config> = z.object({
   controllerReminderLimit: z.number().default(2),
   hiAgentMemorySize: z.number().default(15),
   deepAgentMaxFolds: z.number().default(3),
+  romaMaxDepth: z.number().default(2),
+  romaMaxNodes: z.number().default(15),
+  romaMaxChildren: z.number().default(4),
+  romaMaxParallel: z.number().default(4),
 })
 
 /**
@@ -111,6 +120,19 @@ export function apply(ctx: Context, config: Config): void {
     case 'deepagent':
       ctx.inject(['llm'], ready => {
         applyDeepAgent(ready, { maxFolds: config.deepAgentMaxFolds ?? 3, auxiliaryMaxTokens: config.auxiliaryMaxTokens ?? 8192 })
+      })
+      return
+    case 'roma':
+      ctx.inject(['subagents', 'llm'], ready => {
+        applyRoma(ready, {
+          provider: config.subagentProvider ?? 'spawn',
+          maxDepth: config.romaMaxDepth ?? 2,
+          maxNodes: config.romaMaxNodes ?? 15,
+          maxChildren: config.romaMaxChildren ?? 4,
+          maxParallel: config.romaMaxParallel ?? 4,
+          auxiliaryMaxTokens: config.auxiliaryMaxTokens ?? 8192,
+          controllerReminderLimit: config.controllerReminderLimit ?? 2,
+        })
       })
       return
   }
