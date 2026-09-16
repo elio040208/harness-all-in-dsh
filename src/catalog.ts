@@ -36,7 +36,7 @@ export const HARNESS_CATALOG = [
   { id: 'memobrain', displayName: 'MemoBrain', family: 'in-loop', mechanism: 'dependency-aware reasoning graph with flush and fold', primarySource: 'https://github.com/qhjqhj00/MemoBrain' },
   { id: 'aggagent', displayName: 'AggAgent', family: 'coordinator', mechanism: 'isolated rollouts with trajectory-tool aggregation', primarySource: 'https://arxiv.org/abs/2604.11753' },
   { id: 'oagent', displayName: 'OAgent', family: 'coordinator', mechanism: 'heterogeneous expert ensemble and critic vote', primarySource: 'https://github.com/OPPO-PersonalAI/OAgents' },
-  { id: 'agentfold', displayName: 'AgentFold', family: 'in-loop', mechanism: 'model-directed folding of trajectory ranges', primarySource: 'https://arxiv.org/abs/2510.24699' },
+  { id: 'agentfold', displayName: 'AgentFold', family: 'in-loop', mechanism: 'model-directed folding of trajectory ranges', primarySource: 'https://github.com/Alibaba-NLP/DeepResearch/tree/main/WebAgent/AgentFold' },
   { id: 'hiagent', displayName: 'HiAgent', family: 'in-loop', mechanism: 'hierarchical value-sampled working memory', primarySource: 'https://github.com/HiAgent2024/HiAgent' },
   { id: 'deepagent', displayName: 'DeepAgent', family: 'in-loop', mechanism: 'three-tier memory folding and tool search', primarySource: 'https://github.com/RUC-NLPIR/DeepAgent' },
   { id: 'roma', displayName: 'ROMA', family: 'coordinator', mechanism: 'recursive atomize-plan-execute-aggregate control', primarySource: 'https://github.com/sentient-agi/ROMA' },

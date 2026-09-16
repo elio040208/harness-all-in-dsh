@@ -12,7 +12,7 @@ Reference repositories are consulted during clean DSH-native reimplementation. T
 | MemoBrain | https://github.com/qhjqhj00/MemoBrain |
 | AggAgent | https://github.com/princeton-pli/AggAgent |
 | OAgent | https://github.com/OPPO-PersonalAI/OAgents at `027f2c4579ee7e7767bfe54c66df48a902d43e98` |
-| AgentFold | https://arxiv.org/abs/2510.24699 |
+| AgentFold | https://github.com/Alibaba-NLP/DeepResearch/tree/main/WebAgent/AgentFold at `f72f75d8c3eb842f2bbbab096a12206ff66e270f` |
 | HiAgent | https://github.com/HiAgent2024/HiAgent |
 | DeepAgent | https://github.com/RUC-NLPIR/DeepAgent |
 | ROMA | https://github.com/sentient-agi/ROMA |

@@ -1,5 +1,6 @@
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
+import { applyAgentFold } from './harnesses/agentfold.js'
 import { applyAggAgent } from './harnesses/aggagent.js'
 import { applyFlashSearcher } from './harnesses/flash-searcher.js'
 import { applyGam } from './harnesses/gam.js'
@@ -17,7 +18,7 @@ export const inject = ['sessionProjections', 'systemPrompt', 'tools']
 
 /** Fixed Harness selection. More ids become valid only after their implementation lands. */
 export interface Config {
-  readonly harness?: 'react' | 'plan-and-execute' | 'resum' | 'flash-searcher' | 'gam' | 'memobrain' | 'aggagent' | 'oagent'
+  readonly harness?: 'react' | 'plan-and-execute' | 'resum' | 'flash-searcher' | 'gam' | 'memobrain' | 'aggagent' | 'oagent' | 'agentfold'
   readonly summaryInterval?: number
   readonly reorgInterval?: number
   readonly memoryThresholdRatio?: number
@@ -32,7 +33,7 @@ export interface Config {
 
 /** Load-time validation for the implemented Harness set. */
 export const Config: z<Config> = z.object({
-  harness: z.union(['react', 'plan-and-execute', 'resum', 'flash-searcher', 'gam', 'memobrain', 'aggagent', 'oagent'] as const).default('react'),
+  harness: z.union(['react', 'plan-and-execute', 'resum', 'flash-searcher', 'gam', 'memobrain', 'aggagent', 'oagent', 'agentfold'] as const).default('react'),
   summaryInterval: z.number().default(8),
   reorgInterval: z.number().default(4),
   memoryThresholdRatio: z.number().default(0.25),
@@ -94,6 +95,9 @@ export function apply(ctx: Context, config: Config): void {
           controllerReminderLimit: config.controllerReminderLimit ?? 2,
         })
       })
+      return
+    case 'agentfold':
+      applyAgentFold(ctx)
       return
   }
 }

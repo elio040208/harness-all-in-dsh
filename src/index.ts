@@ -62,6 +62,16 @@ export { runIsolatedAgent } from './runtime/subagent-ensemble.js'
 export type { IsolatedAgentRequest } from './runtime/subagent-ensemble.js'
 export { applyOAgent, oagentExpertDigest, parseOAgentCriticVerdict } from './harnesses/oagent.js'
 export type { OAgentConfig, OAgentCriticVerdict, OAgentExpertDigest } from './harnesses/oagent.js'
+export {
+  AGENTFOLD_PROJECTION_KEY,
+  agentFoldProjectionDefinition,
+  applyAgentFold,
+  applyAgentFoldSummary,
+  foldAgentFoldState,
+  initialAgentFoldState,
+  renderAgentFoldWorkspace,
+} from './harnesses/agentfold.js'
+export type { AgentFoldInteraction, AgentFoldState, AgentFoldSummary } from './harnesses/agentfold.js'
 export type {
   MemoBrainConfig,
   MemoBrainState,
