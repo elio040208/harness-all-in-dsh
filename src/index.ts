@@ -10,3 +10,4 @@ export {
   renderPlanAndExecutePrompt,
 } from './harnesses/plan-and-execute.js'
 export type { LinearPlanState, PlanAndExecuteConfig } from './harnesses/plan-and-execute.js'
+export { RESUM_PROMPT } from './harnesses/resum.js'

@@ -34,7 +34,8 @@
 
 - ReAct：已接入。复用 DSH 原生 `ReactLoopAgent`，保留完整历史和任务工具，关闭会改变该固定 Harness 的压缩、显式规划与递归委派机制。
 - Plan-and-Execute：已接入。先持久化 3–7 步线性 roadmap，再进入 ReAct 执行；默认每 8 个执行步骤持久化一次进度总结。
-- 其余 11 项：按 Table 1 顺序逐项研究和实现。
+- ReSum：已接入。在上下文压力达到 90% 时压缩全部非 system 历史，Session 保留完整事件轨迹，下一步从持久化 checkpoint 继续。
+- 其余 10 项：按 Table 1 顺序逐项研究和实现。
 
 安装到从 `headless` 模板创建的 profile 后即可运行：
 
@@ -44,6 +45,6 @@ dsh plugin --profile harness-react add /absolute/path/to/harness-all-in-dsh
 dsh --profile harness-react "your task"
 ```
 
-源码安装会执行 `prepare` 构建；从 GitHub 安装时需要按 DSH 提示允许该构建脚本。ReAct 的原始实现、固定 revision 与有意偏差记录在 [research/react.md](research/react.md)。
+源码安装会执行 `prepare` 构建；从 GitHub 安装时需要按 DSH 提示允许该构建脚本。各 Harness 的原始实现、固定 revision 与有意偏差记录在 `research/` 下的同名说明中。
 
 研究来源见 [research/SOURCES.md](research/SOURCES.md)，总体架构见 [docs/architecture.md](docs/architecture.md)。

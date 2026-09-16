@@ -1,0 +1,15 @@
+- id: harness-all-in-dsh
+  config:
+    harness: resum
+
+# WebResummer summarizes at 90% of the working-context budget and then restarts
+# from the system prompt plus one summary observation. Retaining zero raw tokens
+# makes the DSH surface replacement cover the complete non-system history.
+- id: compaction-basic
+  disabled: false
+  config:
+    auto: true
+    thresholdRatio: 0.9
+    retainTokens: 0
+    maxTokens: 4096
+    compactionRetries: 0
