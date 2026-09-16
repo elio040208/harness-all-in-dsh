@@ -10,7 +10,7 @@ Reference repositories are consulted during clean DSH-native reimplementation. T
 | Flash-Searcher | https://github.com/OPPO-PersonalAI/Flash-Searcher |
 | GAM | https://github.com/VectorSpaceLab/general-agentic-memory |
 | MemoBrain | https://github.com/qhjqhj00/MemoBrain |
-| AggAgent | https://arxiv.org/abs/2604.11753 |
+| AggAgent | https://github.com/princeton-pli/AggAgent |
 | OAgent | https://github.com/OPPO-PersonalAI/OAgents |
 | AgentFold | https://arxiv.org/abs/2510.24699 |
 | HiAgent | https://github.com/HiAgent2024/HiAgent |

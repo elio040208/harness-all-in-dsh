@@ -1,0 +1,9 @@
+- id: harness-all-in-dsh
+  config:
+    harness: aggagent
+    rolloutCount: 4
+    subagentProvider: spawn
+
+- id: agent-loop
+  config:
+    maxParallelToolCalls: 1

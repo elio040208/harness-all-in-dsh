@@ -46,6 +46,18 @@ export {
   renderMemoCheckpoint,
   renderMemoGraph,
 } from './harnesses/memobrain.js'
+export { applyAggAgent } from './harnesses/aggagent.js'
+export type { AggAgentConfig } from './harnesses/aggagent.js'
+export {
+  formatTrajectoryMetadata,
+  rougeLRecall,
+  searchTrajectory,
+  trajectoryFromEvents,
+  trajectorySegment,
+  trajectorySolutions,
+  truncateWords,
+} from './runtime/trajectory.js'
+export type { AgentTrajectory, TrajectoryStep } from './runtime/trajectory.js'
 export type {
   MemoBrainConfig,
   MemoBrainState,

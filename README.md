@@ -38,7 +38,8 @@
 - Flash-Searcher：已接入。结构化 DAG 记录 1–5 个 goal、依赖和顺序 fallback path；DSH 最多并发执行 5 个跨 goal 调用，并默认每 8 步要求一次完整图 review。
 - GAM：已接入。完整工具结果进入持久 page store，模型为每页写 abstract；默认每 4 个 action step 检索并整合相关页面，再以 integrated memory 替换工作 surface。
 - MemoBrain：已接入。每个完整 tool episode 由辅助模型被动写入 task/subtask/evidence 依赖图；工作上下文达到 25% 时自动 flush 无效节点、fold 已完成路径，并保护首尾上下文生成新 checkpoint。
-- 其余 7 项：按 Table 1 顺序逐项研究和实现。
+- AggAgent：已接入。并行启动 4 个隔离的 DSH rollout Session，再通过 solution、ROUGE-L search、bounded segment 和 validated finish 工具进行证据优先聚合。
+- 其余 6 项：按 Table 1 顺序逐项研究和实现。
 
 安装到从 `headless` 模板创建的 profile 后即可运行：
 

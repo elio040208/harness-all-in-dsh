@@ -1,5 +1,6 @@
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
+import { applyAggAgent } from './harnesses/aggagent.js'
 import { applyFlashSearcher } from './harnesses/flash-searcher.js'
 import { applyGam } from './harnesses/gam.js'
 import { applyMemoBrain } from './harnesses/memobrain.js'
@@ -15,20 +16,24 @@ export const inject = ['sessionProjections', 'systemPrompt', 'tools']
 
 /** Fixed Harness selection. More ids become valid only after their implementation lands. */
 export interface Config {
-  readonly harness?: 'react' | 'plan-and-execute' | 'resum' | 'flash-searcher' | 'gam' | 'memobrain'
+  readonly harness?: 'react' | 'plan-and-execute' | 'resum' | 'flash-searcher' | 'gam' | 'memobrain' | 'aggagent'
   readonly summaryInterval?: number
   readonly reorgInterval?: number
   readonly memoryThresholdRatio?: number
   readonly auxiliaryMaxTokens?: number
+  readonly rolloutCount?: number
+  readonly subagentProvider?: string
 }
 
 /** Load-time validation for the implemented Harness set. */
 export const Config: z<Config> = z.object({
-  harness: z.union(['react', 'plan-and-execute', 'resum', 'flash-searcher', 'gam', 'memobrain'] as const).default('react'),
+  harness: z.union(['react', 'plan-and-execute', 'resum', 'flash-searcher', 'gam', 'memobrain', 'aggagent'] as const).default('react'),
   summaryInterval: z.number().default(8),
   reorgInterval: z.number().default(4),
   memoryThresholdRatio: z.number().default(0.25),
   auxiliaryMaxTokens: z.number().default(8192),
+  rolloutCount: z.number().default(4),
+  subagentProvider: z.string().default('spawn'),
 })
 
 /**
@@ -59,6 +64,14 @@ export function apply(ctx: Context, config: Config): void {
         applyMemoBrain(ready, {
           thresholdRatio: config.memoryThresholdRatio ?? 0.25,
           auxiliaryMaxTokens: config.auxiliaryMaxTokens ?? 8192,
+        })
+      })
+      return
+    case 'aggagent':
+      ctx.inject(['subagents'], ready => {
+        applyAggAgent(ready, {
+          rolloutCount: config.rolloutCount ?? 4,
+          provider: config.subagentProvider ?? 'spawn',
         })
       })
       return
