@@ -7,8 +7,6 @@ English | [中文](memobrain.zh.md)
 - Official MemoBrain repository: https://github.com/qhjqhj00/MemoBrain at `82f16e17c28313a57bf95d83340142b96507f3d1` (Apache-2.0).
 - Inspected official files: `src/{memobrain.py,problem_tree.py,prompts.py,schema.py}` and `examples/{react_with_memory.py,memory_snapshot.json}`.
 - Paper: https://arxiv.org/abs/2601.08079.
-- JIT HarnessFactory repository: https://github.com/bingreeky/JIT at `ababa06c2f54d799fd9fbc356e5368f61a452260` (Apache-2.0).
-- Inspected JIT files: `harness_factory/harnesses/memobrain/{memory.py,planning.py,action.py,tool_policy.py,prompt.yaml}` and `harness_factory/descriptions/memobrain.md`.
 
 ## Defining behavior
 

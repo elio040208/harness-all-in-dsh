@@ -6,12 +6,10 @@ English | [中文](plan-and-execute.zh.md)
 
 - Original Plan-and-Act repository: https://github.com/SqueezeAILab/plan-and-act at `534ed56f0d75e3059e54907859b89c901094f293` (Apache-2.0).
 - Inspected original files: `plan_and_act/cot/inference/plan.py`, `plan_and_act/cot/inference/act.py`, and `run_plan_and_act.py`.
-- JIT HarnessFactory repository: https://github.com/bingreeky/JIT at `ababa06c2f54d799fd9fbc356e5368f61a452260` (Apache-2.0).
-- Inspected JIT files: `harness_factory/harnesses/plan_and_execute/{memory.py,planning.py,action.py,tool_policy.py,prompt.yaml}` and `harness_factory/descriptions/plan_and_execute.md`.
 
 ## Defining behavior
 
-The original Plan-and-Act system separates a planner from an executor. The planner produces a detailed plan before the executor chooses immediate actions from the current observation, task, previous rounds, and plan. HarnessFactory adapts that design to the shared kernel: step 0 generates a 3-7 item numbered linear roadmap, ordinary steps use a ReAct action/observation loop with the full tool registry, and every eight execution steps append a progress summary. Full history retains the initial plan, every action and observation, and later summaries.
+The original Plan-and-Act system separates a planner from an executor. The planner produces a detailed plan before the executor chooses immediate actions from the current observation, task, previous rounds, and plan.
 
 ## DSH implementation
 

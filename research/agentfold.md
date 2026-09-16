@@ -7,8 +7,6 @@ English | [中文](agentfold.zh.md)
 - Official DeepResearch repository: https://github.com/Alibaba-NLP/DeepResearch at `f72f75d8c3eb842f2bbbab096a12206ff66e270f` (Apache-2.0).
 - Inspected official files: `WebAgent/AgentFold/infer.py`, `WebAgent/AgentFold/serve.sh`, the root README, and the root license.
 - Paper: https://arxiv.org/abs/2510.24699, especially Sections 3.1–3.3.
-- JIT HarnessFactory repository: https://github.com/bingreeky/JIT at `ababa06c2f54d799fd9fbc356e5368f61a452260` (Apache-2.0).
-- Inspected JIT files: `harness_factory/harnesses/agentfold/{memory.py,action.py,planning.py,tool_policy.py,prompt.yaml}` and `harness_factory/descriptions/agentfold.md`.
 
 ## Defining behavior
 

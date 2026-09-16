@@ -6,12 +6,10 @@
 
 - 原始 Plan-and-Act 仓库：[SqueezeAILab/plan-and-act](https://github.com/SqueezeAILab/plan-and-act)，revision `534ed56f0d75e3059e54907859b89c901094f293`，Apache-2.0。
 - 检查文件：`plan_and_act/cot/inference/plan.py`、`plan_and_act/cot/inference/act.py` 和 `run_plan_and_act.py`。
-- JIT HarnessFactory：[bingreeky/JIT](https://github.com/bingreeky/JIT)，revision `ababa06c2f54d799fd9fbc356e5368f61a452260`，Apache-2.0。
-- 检查 JIT 文件：`harness_factory/harnesses/plan_and_execute/` 下的 memory、planning、action、tool policy、prompt，以及对应 description。
 
 ## 定义行为
 
-原始 Plan-and-Act 把 planner 和 executor 分开。Planner 先生成详细计划，executor 再根据当前 observation、任务、历史轮次和计划选择即时动作。固定 Harness 适配会在第 0 步生成 3–7 项编号线性 roadmap；普通步骤使用完整工具目录执行 ReAct action/observation loop；每八个执行步骤追加一次进度摘要。Full history 保留初始计划、所有 action、observation 和后续摘要。
+原始 Plan-and-Act 把 planner 和 executor 分开。Planner 先生成详细计划，executor 再根据当前 observation、任务、历史轮次和计划选择即时动作。
 
 ## DSH 实现
 

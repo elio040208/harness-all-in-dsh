@@ -7,7 +7,6 @@
 - 官方仓库：[OPPO-PersonalAI/Flash-Searcher](https://github.com/OPPO-PersonalAI/Flash-Searcher)，revision `844f51f70dd641647760d90dbb027d0d45c111f0`，Apache-2.0。
 - 检查文件：`FlashOAgents/agents.py`、`memory.py`、`agent_types.py`、默认 tool-calling prompt、`base_agent.py`、`run_flash_searcher.py` 和 README。
 - 论文：[Flash-Searcher](https://arxiv.org/abs/2509.25301)。
-- JIT HarnessFactory revision `ababa06c2f54d799fd9fbc356e5368f61a452260`；检查 Flash-Searcher memory、planning、action、tool policy、prompt 和 description。
 
 ## 定义行为
 

@@ -7,7 +7,6 @@
 - 官方仓库：[qhjqhj00/MemoBrain](https://github.com/qhjqhj00/MemoBrain)，revision `82f16e17c28313a57bf95d83340142b96507f3d1`，Apache-2.0。
 - 检查文件：`src/memobrain.py`、`problem_tree.py`、`prompts.py`、`schema.py`，以及 `examples/react_with_memory.py` 和 `memory_snapshot.json`。
 - 论文：[MemoBrain](https://arxiv.org/abs/2601.08079)。
-- JIT HarnessFactory revision `ababa06c2f54d799fd9fbc356e5368f61a452260`；检查 MemoBrain memory、planning、action、tool policy、prompt 和 description。
 
 ## 定义行为
 

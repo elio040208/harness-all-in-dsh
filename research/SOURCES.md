@@ -20,6 +20,4 @@ Reference repositories are consulted during clean DSH-native reimplementation. T
 | ROMA | [Official repository](https://github.com/sentient-agi/ROMA) | [Note](roma.md) |
 | AOrchestra | [Official repository](https://github.com/FoundationAgents/AOrchestra) | [Note](aorchestra.md) |
 
-The [JIT-Agent paper](https://arxiv.org/abs/2608.25593) and [HarnessFactory source](https://github.com/bingreeky/JIT/tree/main/harness_factory) provide an additional common interface and fixed-harness interpretation. The official code and paper for each Harness remain the primary behavior references.
-
 Before changing a Harness mechanism, update its note with the new upstream revision, inspected files, license status, behavior evidence, and intentional DSH differences.

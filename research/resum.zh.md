@@ -6,13 +6,10 @@
 
 - 原始 WebResummer：[Alibaba-NLP/DeepResearch/WebAgent/WebResummer](https://github.com/Alibaba-NLP/DeepResearch/tree/main/WebAgent/WebResummer)，revision `f72f75d8c3eb842f2bbbab096a12206ff66e270f`，Apache-2.0。
 - 检查文件：`src/react_agent.py`、`src/summary_utils.py`、`src/prompt.py`、`src/main.py` 和 `src/run_resum.sh`。
-- JIT HarnessFactory：[bingreeky/JIT](https://github.com/bingreeky/JIT)，revision `ababa06c2f54d799fd9fbc356e5368f61a452260`，Apache-2.0；同时检查 ReSum memory、planning、action、tool policy、prompt 和 description。
 
 ## 定义行为
 
 WebResummer 运行直接的 ReAct loop，同时为评测保留独立完整轨迹。每次 action 后，它都会测量活跃模型上下文。启用 ReSum 后，当上下文达到预算的 90%，summarizer 会总结自上次 reset 以来的对话。第一次 summary 使用原始问题和近期历史；后续 summary 还会接收上一次 summary。成功后，活跃上下文被替换为 system prompt 和包含原问题、合并摘要的合成用户 observation；失败或空摘要不会改变历史。
-
-固定 Harness 解释把 ReSum 定义为无 planner、ReAct execution、完整工具目录和 summary memory。JIT seed 另外加入初始线性 roadmap 和八步进度 review；本实现遵循 WebResummer 原始执行 loop，不引入这层额外 planner。
 
 ## DSH 实现
 

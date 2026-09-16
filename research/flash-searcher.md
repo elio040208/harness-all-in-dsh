@@ -7,8 +7,6 @@ English | [中文](flash-searcher.zh.md)
 - Official Flash-Searcher repository: https://github.com/OPPO-PersonalAI/Flash-Searcher at `844f51f70dd641647760d90dbb027d0d45c111f0` (Apache-2.0).
 - Inspected official files: `FlashOAgents/agents.py`, `FlashOAgents/memory.py`, `FlashOAgents/agent_types.py`, `FlashOAgents/prompts/default/toolcalling_agent.yaml`, `base_agent.py`, `run_flash_searcher.py`, and `README.md`.
 - Paper: https://arxiv.org/abs/2509.25301.
-- JIT HarnessFactory repository: https://github.com/bingreeky/JIT at `ababa06c2f54d799fd9fbc356e5368f61a452260` (Apache-2.0).
-- Inspected JIT files: `harness_factory/harnesses/flash_searcher/{memory.py,planning.py,action.py,tool_policy.py,prompt.yaml}`, `harness_factory/descriptions/flash_searcher.md`, and `harness_factory/harnesses/flash_searcher/description.yaml`.
 
 ## Defining behavior
 

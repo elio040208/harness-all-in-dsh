@@ -7,8 +7,6 @@ English | [中文](oagent.zh.md)
 - Official OAgents repository: https://github.com/OPPO-PersonalAI/OAgents at `027f2c4579ee7e7767bfe54c66df48a902d43e98` (Apache-2.0).
 - Inspected official files: `OAgents/src/oagents/agents.py`, `OAgents/example/oagents_deep_research/run_gaia_tts.py`, and the root README. The official test-time-scaling implementation supplies independent rollouts plus list-wise, scoring, and voting result mergers.
 - Papers: https://arxiv.org/abs/2506.15741 and https://arxiv.org/abs/2506.12928.
-- JIT HarnessFactory repository: https://github.com/bingreeky/JIT at `ababa06c2f54d799fd9fbc356e5368f61a452260` (Apache-2.0).
-- Inspected JIT files: `harness_factory/harnesses/oagent/{memory.py,action.py,planning.py,tool_policy.py,prompt.yaml}` and `harness_factory/descriptions/oagent.md`.
 
 ## Defining behavior
 

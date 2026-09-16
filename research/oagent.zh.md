@@ -7,7 +7,6 @@
 - 官方仓库：[OPPO-PersonalAI/OAgents](https://github.com/OPPO-PersonalAI/OAgents)，revision `027f2c4579ee7e7767bfe54c66df48a902d43e98`，Apache-2.0。
 - 检查文件：`OAgents/src/oagents/agents.py`、GAIA TTS runner 和根 README。
 - 论文：[OAgents](https://arxiv.org/abs/2506.15741)和[相关 test-time scaling 工作](https://arxiv.org/abs/2506.12928)。
-- JIT HarnessFactory revision `ababa06c2f54d799fd9fbc356e5368f61a452260`；检查 OAgent memory、action、planning、tool policy、prompt 和 description。
 
 ## 定义行为
 

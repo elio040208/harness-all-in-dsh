@@ -7,7 +7,6 @@
 - 官方仓库：[princeton-pli/AggAgent](https://github.com/princeton-pli/AggAgent)，revision `9638f7d88aee01eb636c02841e13a05bb2e3c449`，MIT。
 - 检查文件：`aggagent/agent.py`、`tools.py`、`prompts.py`、aggregation strategy、rollout 入口和 README 用法。
 - 论文：[AggAgent](https://arxiv.org/abs/2604.11753)。
-- JIT HarnessFactory revision `ababa06c2f54d799fd9fbc356e5368f61a452260`；检查 AggAgent memory、action、planning、tool policy、prompt 和 description。
 
 ## 定义行为
 

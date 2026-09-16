@@ -7,7 +7,6 @@
 - 官方 DeepResearch 仓库：[Alibaba-NLP/DeepResearch](https://github.com/Alibaba-NLP/DeepResearch)，revision `f72f75d8c3eb842f2bbbab096a12206ff66e270f`，Apache-2.0。
 - 检查文件：`WebAgent/AgentFold/infer.py`、`serve.sh`、根 README 和许可证。
 - 论文：[AgentFold](https://arxiv.org/abs/2510.24699)，重点为 3.1–3.3 节。
-- JIT HarnessFactory revision `ababa06c2f54d799fd9fbc356e5368f61a452260`；检查 AgentFold memory、action、planning、tool policy、prompt 和 description。
 
 ## 定义行为
 

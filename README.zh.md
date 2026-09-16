@@ -4,7 +4,7 @@
 
 使用 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 原生插件和 Agent preset 复现公开的 Agent Harness。
 
-项目目前提供 13 个固定 Harness。项目不复制 JIT-Agent 仓库，也不复现其训练流程。原始论文、官方实现和 JIT HarnessFactory 仅作为实现参考；每份研究笔记都会记录检查过的 revision 和有意差异。
+项目目前提供 13 个固定 Harness。原始论文和官方实现是主要参考；每份研究笔记都会记录检查过的 revision 和有意差异。
 
 ## 项目目标
 

@@ -7,7 +7,6 @@
 - 官方仓库：[RUC-NLPIR/DeepAgent](https://github.com/RUC-NLPIR/DeepAgent)，revision `2e25aba3326295fff41fe1216792af353bb98558`，MIT。
 - 检查文件：`src/run_deep_agent.py`、`prompts_deepagent.py`、`run_tool_search_server.py`、根 README 和许可证。
 - 论文：[DeepAgent](https://arxiv.org/abs/2510.21618)。
-- JIT HarnessFactory revision `ababa06c2f54d799fd9fbc356e5368f61a452260`；检查 DeepAgent memory、action、planning、tool policy、prompt 和 description。
 
 ## 定义行为
 

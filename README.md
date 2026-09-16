@@ -4,7 +4,7 @@ English | [中文](README.zh.md)
 
 Reproductions of published Agent Harnesses built as native [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) plugins and Agent presets.
 
-The project currently provides 13 fixed Harnesses. It does not copy the JIT-Agent repository or reproduce its training pipeline. Original papers, official implementations, and the JIT HarnessFactory are used as implementation references; each research note records the inspected revision and intentional differences.
+The project currently provides 13 fixed Harnesses. Original papers and official implementations are the primary references; each research note records the inspected revision and intentional differences.
 
 ## Why this project
 

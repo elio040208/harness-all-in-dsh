@@ -7,11 +7,10 @@ English | [中文](react.zh.md)
 - Official repository: https://github.com/ysymyth/ReAct at `6bdb3a1fd38b8188fc7ba4102969fe483df8fdc9` (MIT).
 - Inspected implementation: `hotpotqa.ipynb` blob `0bd48a1f559bc19c3de634422240beb5cc6a111e` and `prompts/prompts_naive.json` blob `df9097412ed4f55da903cbb847d9e21c956c9bf0`.
 - Paper: https://arxiv.org/abs/2210.03629.
-- JIT-Agent paper and shared HarnessFactory protocol: https://arxiv.org/abs/2608.25593 at repository revision `ababa06c2f54d799fd9fbc356e5368f61a452260`.
 
 ## Defining behavior
 
-The official HotpotQA loop retains the complete prompt trajectory and repeatedly asks the model for a `Thought` followed by one `Action`. The environment executes `Search`, `Lookup`, or `Finish`, appends the resulting `Observation`, and repeats for at most seven iterations. The fixed Harness interpretation uses FullHistory memory, no explicit planner, ReAct action, and the full task capability registry.
+The official HotpotQA loop retains the complete prompt trajectory and repeatedly asks the model for a `Thought` followed by one `Action`. The environment executes `Search`, `Lookup`, or `Finish`, appends the resulting `Observation`, and repeats for at most seven iterations.
 
 ## DSH implementation
 

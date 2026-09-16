@@ -7,8 +7,6 @@ English | [中文](deepagent.zh.md)
 - Official repository: https://github.com/RUC-NLPIR/DeepAgent at `2e25aba3326295fff41fe1216792af353bb98558` (MIT).
 - Inspected official files: `src/run_deep_agent.py`, `src/prompts/prompts_deepagent.py`, `src/run_tool_search_server.py`, the root README, and license.
 - Paper: https://arxiv.org/abs/2510.21618.
-- JIT HarnessFactory repository: https://github.com/bingreeky/JIT at `ababa06c2f54d799fd9fbc356e5368f61a452260` (Apache-2.0).
-- Inspected JIT files: `harness_factory/harnesses/deepagent/{memory.py,action.py,planning.py,tool_policy.py,prompt.yaml}` and `harness_factory/descriptions/deepagent.md`.
 
 ## Defining behavior
 

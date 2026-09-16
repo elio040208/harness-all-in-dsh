@@ -6,14 +6,10 @@ English | [中文](resum.zh.md)
 
 - Original WebResummer repository: https://github.com/Alibaba-NLP/DeepResearch/tree/main/WebAgent/WebResummer at `f72f75d8c3eb842f2bbbab096a12206ff66e270f` (Apache-2.0).
 - Inspected original files: `src/react_agent.py`, `src/summary_utils.py`, `src/prompt.py`, `src/main.py`, and `src/run_resum.sh`.
-- JIT HarnessFactory repository: https://github.com/bingreeky/JIT at `ababa06c2f54d799fd9fbc356e5368f61a452260` (Apache-2.0).
-- Inspected JIT files: `harness_factory/harnesses/resum/{memory.py,planning.py,action.py,tool_policy.py,prompt.yaml}`, `harness_factory/descriptions/resum.md`, and `harness_factory/harnesses/resum/description.yaml`.
 
 ## Defining behavior
 
 WebResummer runs a direct ReAct loop while keeping a separate full trajectory for evaluation. It measures the active model context after every action. With ReSum enabled, reaching 90% of the configured context budget invokes a summarizer over the conversation since the last reset. The first summary is grounded in the original question and recent history; later summaries also receive the preceding summary. A successful summary replaces the active context with the system prompt and a synthetic user observation containing the original question and the consolidated summary. Failed or empty summaries leave the active history unchanged.
-
-The fixed Harness interpretation classifies ReSum as summarized memory with no planner, ReAct execution, and the full tool registry. JIT's seed implementation adds a linear initial roadmap and an eight-step progress review. This reproduction follows that classification and WebResummer's original execution loop instead of importing the extra planner.
 
 ## DSH implementation
 

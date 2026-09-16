@@ -7,8 +7,6 @@ English | [中文](aggagent.zh.md)
 - Official AggAgent repository: https://github.com/princeton-pli/AggAgent at `9638f7d88aee01eb636c02841e13a05bb2e3c449` (MIT).
 - Inspected official files: `aggagent/{agent.py,tools.py,prompts.py}`, `aggregation/_strategy/aggagent.py`, rollout entry points, and README usage.
 - Paper: https://arxiv.org/abs/2604.11753.
-- JIT HarnessFactory repository: https://github.com/bingreeky/JIT at `ababa06c2f54d799fd9fbc356e5368f61a452260` (Apache-2.0).
-- Inspected JIT files: `harness_factory/harnesses/aggagent/{memory.py,action.py,planning.py,tool_policy.py,prompt.yaml}` and `harness_factory/descriptions/aggagent.md`.
 
 ## Defining behavior
 

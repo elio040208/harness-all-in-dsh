@@ -20,6 +20,4 @@
 | ROMA | [官方仓库](https://github.com/sentient-agi/ROMA) | [笔记](roma.zh.md) |
 | AOrchestra | [官方仓库](https://github.com/FoundationAgents/AOrchestra) | [笔记](aorchestra.zh.md) |
 
-[JIT-Agent 论文](https://arxiv.org/abs/2608.25593)和 [HarnessFactory 源码](https://github.com/bingreeky/JIT/tree/main/harness_factory)提供额外的公共接口和固定 Harness 解释。每个 Harness 的官方代码和论文仍是主要行为依据。
-
 修改 Harness 机制前，应在对应笔记中更新上游 revision、检查文件、许可证状态、行为证据和有意的 DSH 差异。
