@@ -42,7 +42,8 @@
 - OAgent：已接入。默认顺序运行 1 个 Plan-and-Execute 专家和 2 个 ReAct 专家，再由同路由 critic 根据答案与工具证据选择或综合最终结果。
 - AgentFold：已接入。每一步把旧历史表示为连续的多尺度摘要块，只保留最新一次工具交互的完整记录；模型在下一次动作时主动选择 granular condensation 或 deep consolidation。
 - HiAgent：已接入。Session 保存完整轨迹，模型上下文默认仅保留首尾与按边界权重、TF-IDF observation novelty 选出的 15 个高价值交互，其余位置显示 `Omitted` 占位。
-- 其余 3 项：按 Table 1 顺序逐项研究和实现。
+- DeepAgent：已接入。模型可主动搜索当前工具目录或触发 thought fold；fold 并行生成 episodic、working、tool 三类记忆，再从任务与结构化记忆组成的新 surface 继续。
+- 其余 2 项：按 Table 1 顺序逐项研究和实现。
 
 安装到从 `headless` 模板创建的 profile 后即可运行：
 

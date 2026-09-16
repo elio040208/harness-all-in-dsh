@@ -1,0 +1,9 @@
+- id: harness-all-in-dsh
+  config:
+    harness: deepagent
+    deepAgentMaxFolds: 3
+    auxiliaryMaxTokens: 8192
+
+- id: agent-loop
+  config:
+    maxParallelToolCalls: 1

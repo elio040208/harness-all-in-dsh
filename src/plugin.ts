@@ -2,6 +2,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { applyAgentFold } from './harnesses/agentfold.js'
 import { applyAggAgent } from './harnesses/aggagent.js'
+import { applyDeepAgent } from './harnesses/deepagent.js'
 import { applyFlashSearcher } from './harnesses/flash-searcher.js'
 import { applyGam } from './harnesses/gam.js'
 import { applyHiAgent } from './harnesses/hiagent.js'
@@ -19,7 +20,7 @@ export const inject = ['sessionProjections', 'systemPrompt', 'tools']
 
 /** Fixed Harness selection. More ids become valid only after their implementation lands. */
 export interface Config {
-  readonly harness?: 'react' | 'plan-and-execute' | 'resum' | 'flash-searcher' | 'gam' | 'memobrain' | 'aggagent' | 'oagent' | 'agentfold' | 'hiagent'
+  readonly harness?: 'react' | 'plan-and-execute' | 'resum' | 'flash-searcher' | 'gam' | 'memobrain' | 'aggagent' | 'oagent' | 'agentfold' | 'hiagent' | 'deepagent'
   readonly summaryInterval?: number
   readonly reorgInterval?: number
   readonly memoryThresholdRatio?: number
@@ -31,11 +32,12 @@ export interface Config {
   readonly criticMaxTokens?: number
   readonly controllerReminderLimit?: number
   readonly hiAgentMemorySize?: number
+  readonly deepAgentMaxFolds?: number
 }
 
 /** Load-time validation for the implemented Harness set. */
 export const Config: z<Config> = z.object({
-  harness: z.union(['react', 'plan-and-execute', 'resum', 'flash-searcher', 'gam', 'memobrain', 'aggagent', 'oagent', 'agentfold', 'hiagent'] as const).default('react'),
+  harness: z.union(['react', 'plan-and-execute', 'resum', 'flash-searcher', 'gam', 'memobrain', 'aggagent', 'oagent', 'agentfold', 'hiagent', 'deepagent'] as const).default('react'),
   summaryInterval: z.number().default(8),
   reorgInterval: z.number().default(4),
   memoryThresholdRatio: z.number().default(0.25),
@@ -47,6 +49,7 @@ export const Config: z<Config> = z.object({
   criticMaxTokens: z.number().default(4096),
   controllerReminderLimit: z.number().default(2),
   hiAgentMemorySize: z.number().default(15),
+  deepAgentMaxFolds: z.number().default(3),
 })
 
 /**
@@ -104,6 +107,11 @@ export function apply(ctx: Context, config: Config): void {
       return
     case 'hiagent':
       applyHiAgent(ctx, { memorySize: config.hiAgentMemorySize ?? 15 })
+      return
+    case 'deepagent':
+      ctx.inject(['llm'], ready => {
+        applyDeepAgent(ready, { maxFolds: config.deepAgentMaxFolds ?? 3, auxiliaryMaxTokens: config.auxiliaryMaxTokens ?? 8192 })
+      })
       return
   }
 }

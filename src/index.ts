@@ -83,6 +83,15 @@ export {
   selectHiAgentInteractions,
 } from './harnesses/hiagent.js'
 export type { HiAgentConfig, HiAgentState } from './harnesses/hiagent.js'
+export {
+  DEEPAGENT_PROJECTION_KEY,
+  applyDeepAgent,
+  deepAgentProjectionDefinition,
+  foldDeepAgentState,
+  initialDeepAgentState,
+  renderDeepAgentCheckpoint,
+} from './harnesses/deepagent.js'
+export type { DeepAgentConfig, DeepAgentFold, DeepAgentState } from './harnesses/deepagent.js'
 export { foldToolEpisodes, initialToolEpisodeCollection } from './runtime/tool-episodes.js'
 export type { ToolEpisode, ToolEpisodeAction, ToolEpisodeCollection } from './runtime/tool-episodes.js'
 export type {
