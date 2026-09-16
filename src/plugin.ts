@@ -1,6 +1,7 @@
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { applyAgentFold } from './harnesses/agentfold.js'
+import { applyAOrchestra } from './harnesses/aorchestra.js'
 import { applyAggAgent } from './harnesses/aggagent.js'
 import { applyDeepAgent } from './harnesses/deepagent.js'
 import { applyFlashSearcher } from './harnesses/flash-searcher.js'
@@ -21,7 +22,7 @@ export const inject = ['sessionProjections', 'systemPrompt', 'tools']
 
 /** Fixed Harness selection. More ids become valid only after their implementation lands. */
 export interface Config {
-  readonly harness?: 'react' | 'plan-and-execute' | 'resum' | 'flash-searcher' | 'gam' | 'memobrain' | 'aggagent' | 'oagent' | 'agentfold' | 'hiagent' | 'deepagent' | 'roma'
+  readonly harness?: 'react' | 'plan-and-execute' | 'resum' | 'flash-searcher' | 'gam' | 'memobrain' | 'aggagent' | 'oagent' | 'agentfold' | 'hiagent' | 'deepagent' | 'roma' | 'aorchestra'
   readonly summaryInterval?: number
   readonly reorgInterval?: number
   readonly memoryThresholdRatio?: number
@@ -38,11 +39,14 @@ export interface Config {
   readonly romaMaxNodes?: number
   readonly romaMaxChildren?: number
   readonly romaMaxParallel?: number
+  readonly aorchestraModels?: string
+  readonly aorchestraModelProvider?: string
+  readonly aorchestraMaxDelegations?: number
 }
 
 /** Load-time validation for the implemented Harness set. */
 export const Config: z<Config> = z.object({
-  harness: z.union(['react', 'plan-and-execute', 'resum', 'flash-searcher', 'gam', 'memobrain', 'aggagent', 'oagent', 'agentfold', 'hiagent', 'deepagent', 'roma'] as const).default('react'),
+  harness: z.union(['react', 'plan-and-execute', 'resum', 'flash-searcher', 'gam', 'memobrain', 'aggagent', 'oagent', 'agentfold', 'hiagent', 'deepagent', 'roma', 'aorchestra'] as const).default('react'),
   summaryInterval: z.number().default(8),
   reorgInterval: z.number().default(4),
   memoryThresholdRatio: z.number().default(0.25),
@@ -59,6 +63,9 @@ export const Config: z<Config> = z.object({
   romaMaxNodes: z.number().default(15),
   romaMaxChildren: z.number().default(4),
   romaMaxParallel: z.number().default(4),
+  aorchestraModels: z.string().default('deepseek-v4.1-flash'),
+  aorchestraModelProvider: z.string().default(''),
+  aorchestraMaxDelegations: z.number().default(5),
 })
 
 /**
@@ -131,6 +138,17 @@ export function apply(ctx: Context, config: Config): void {
           maxChildren: config.romaMaxChildren ?? 4,
           maxParallel: config.romaMaxParallel ?? 4,
           auxiliaryMaxTokens: config.auxiliaryMaxTokens ?? 8192,
+          controllerReminderLimit: config.controllerReminderLimit ?? 2,
+        })
+      })
+      return
+    case 'aorchestra':
+      ctx.inject(['subagents'], ready => {
+        applyAOrchestra(ready, {
+          subagentProvider: config.subagentProvider ?? 'spawn',
+          modelProvider: config.aorchestraModelProvider ?? '',
+          models: (config.aorchestraModels ?? 'deepseek-v4.1-flash').split(',').map(model => model.trim()).filter(Boolean),
+          maxDelegations: config.aorchestraMaxDelegations ?? 5,
           controllerReminderLimit: config.controllerReminderLimit ?? 2,
         })
       })

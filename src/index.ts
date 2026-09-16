@@ -53,6 +53,7 @@ export {
   rougeLRecall,
   searchTrajectory,
   trajectoryFromEvents,
+  trajectoryFinalAnswer,
   trajectorySegment,
   trajectorySolutions,
   truncateWords,
@@ -94,6 +95,8 @@ export {
 export type { DeepAgentConfig, DeepAgentFold, DeepAgentState } from './harnesses/deepagent.js'
 export { applyRoma, parseRomaAtomizer, parseRomaPlan } from './harnesses/roma.js'
 export type { RomaConfig, RomaNode, RomaPlannedTask } from './harnesses/roma.js'
+export { aorchestraToolCatalogue, aorchestraTraceSummary, applyAOrchestra } from './harnesses/aorchestra.js'
+export type { AOrchestraConfig, AOrchestraDelegation, AOrchestraTuple } from './harnesses/aorchestra.js'
 export { foldToolEpisodes, initialToolEpisodeCollection } from './runtime/tool-episodes.js'
 export type { ToolEpisode, ToolEpisodeAction, ToolEpisodeCollection } from './runtime/tool-episodes.js'
 export type {

@@ -12,18 +12,26 @@ export interface IsolatedAgentRequest {
   readonly persona: string
   readonly provider: string
   readonly deniedTools: readonly string[]
+  readonly allowedTools?: readonly string[]
+  readonly agentOptions?: { readonly provider: string; readonly model: string }
   readonly parent: Agent
   readonly signal: AbortSignal
 }
 
 /** Run one fresh DSH child Agent and capture its durable Session as a trajectory. */
 export async function runIsolatedAgent(ctx: Context, request: IsolatedAgentRequest): Promise<AgentTrajectory> {
+  if (request.allowedTools !== undefined && request.deniedTools.length > 0) {
+    throw new Error('an isolated Agent request cannot combine allowedTools and deniedTools')
+  }
   const run = await ctx.subagents.start(request.provider, {
     label: request.label,
     parent: request.parent,
     signal: request.signal,
     maxDepth: 1,
-    toolFilter: { deny: [...request.deniedTools] },
+    toolFilter: request.allowedTools === undefined
+      ? { deny: [...request.deniedTools] }
+      : { allow: [...request.allowedTools] },
+    ...(request.agentOptions === undefined ? {} : { agentOptions: request.agentOptions }),
     persona: request.persona,
     prompt: [{ type: 'text', text: request.prompt }],
   })

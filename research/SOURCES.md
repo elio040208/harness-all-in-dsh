@@ -16,7 +16,7 @@ Reference repositories are consulted during clean DSH-native reimplementation. T
 | HiAgent | https://github.com/HiAgent2024/HiAgent at `cebdd8e4eacec1a532ce2c0041db8902217b90ba` |
 | DeepAgent | https://github.com/RUC-NLPIR/DeepAgent at `2e25aba3326295fff41fe1216792af353bb98558` |
 | ROMA | https://github.com/sentient-agi/ROMA at `a6e3bb4f9e0694375fa627fa4b8bf8cae50592a6` |
-| AOrchestra | https://github.com/FoundationAgents/AOrchestra |
+| AOrchestra | https://github.com/FoundationAgents/AOrchestra at `14a1a2051d6b03c479b706f8f555a60b8419e3b5` |
 
 Table 1 and the authors' fixed-harness interpretations are checked against:
 

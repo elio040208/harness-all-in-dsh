@@ -17,6 +17,11 @@ export interface AgentTrajectory {
   readonly steps: readonly TrajectoryStep[]
 }
 
+/** Return the last non-empty assistant message produced by one trajectory. */
+export function trajectoryFinalAnswer(trajectory: AgentTrajectory): string {
+  return trajectory.steps.findLast(step => step.role === 'assistant' && step.content.trim().length > 0)?.content.trim() ?? ''
+}
+
 type MutableStep = {
   role: TrajectoryStep['role']
   content: string
@@ -133,7 +138,7 @@ export function trajectorySolutions(
   if (trajectoryId !== undefined && selected.length === 0) throw new Error(`trajectoryId must be 1-${trajectories.length}`)
   return selected.map(trajectory => ({
     trajectoryId: trajectory.id,
-    content: trajectory.steps.at(-1)?.content ?? '',
+    content: trajectoryFinalAnswer(trajectory),
   }))
 }
 

@@ -8,7 +8,7 @@ import { assertValidDag, readyDagNodeIds } from '../runtime/dag.js'
 import { contentText } from '../runtime/content.js'
 import { registerHarnessPrompt } from '../runtime/prompt.js'
 import { runIsolatedAgent } from '../runtime/subagent-ensemble.js'
-import type { AgentTrajectory } from '../runtime/trajectory.js'
+import { trajectoryFinalAnswer } from '../runtime/trajectory.js'
 
 const RUN_TOOL = 'roma_solve'
 const ROMA_SOURCE = 'harness-all-in-dsh:roma'
@@ -111,12 +111,6 @@ function originalTask(agent: Agent): string {
   return task
 }
 
-function finalAssistantText(trajectory: AgentTrajectory): string {
-  const step = trajectory.steps.findLast(candidate => candidate.role === 'assistant' && candidate.content.trim().length > 0)
-  if (step === undefined) throw new Error('ROMA executor child produced no final answer')
-  return step.content.trim()
-}
-
 function dependencyContext(task: RomaPlannedTask, results: ReadonlyMap<string, RomaNode>): string {
   if (task.dependsOn.length === 0) return ''
   return task.dependsOn.map(id => {
@@ -184,7 +178,9 @@ async function executeAtomic(
     persona: `You are a ROMA atomic executor for task type ${taskType}. Complete only the supplied atomic goal with available tools. Treat dependency outputs as context, verify tool observations, and return a standalone result. Do not decompose or delegate.`,
     prompt: `Atomic goal:\n${goal}\n\nDependency outputs:\n${dependencyInput || '(none)'}`,
   })
-  return { result: finalAssistantText(trajectory), sessionId: trajectory.sessionId }
+  const result = trajectoryFinalAnswer(trajectory)
+  if (result.length === 0) throw new Error('ROMA executor child produced no final answer')
+  return { result, sessionId: trajectory.sessionId }
 }
 
 async function aggregate(

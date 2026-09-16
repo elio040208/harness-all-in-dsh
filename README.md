@@ -44,7 +44,8 @@
 - HiAgent：已接入。Session 保存完整轨迹，模型上下文默认仅保留首尾与按边界权重、TF-IDF observation novelty 选出的 15 个高价值交互，其余位置显示 `Omitted` 占位。
 - DeepAgent：已接入。模型可主动搜索当前工具目录或触发 thought fold；fold 并行生成 episodic、working、tool 三类记忆，再从任务与结构化记忆组成的新 surface 继续。
 - ROMA：已接入。父协调器递归执行 atomize、依赖 DAG planning、原子子 Session execution 与逐层 aggregation；深度上限强制执行，完整任务树保存在父 Session 工具结果中。
-- 其余 1 项：按 Table 1 顺序研究和实现。
+- AOrchestra：已接入。MainAgent 逐次动态指定子 Agent 的 `<instruction, context, tools, model>` 四元组；每次委派使用独立 DSH Session、模型路由和工具白名单，最后由显式 complete 动作汇总。
+- Table 1 的 13 个固定 Harness 已全部接入；后续工作是建立同模型、同任务、同预算的评测矩阵。
 
 安装到从 `headless` 模板创建的 profile 后即可运行：
 

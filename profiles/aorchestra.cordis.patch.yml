@@ -1,0 +1,10 @@
+- id: harness-all-in-dsh
+  config:
+    harness: aorchestra
+    aorchestraModels: deepseek-v4.1-flash
+    aorchestraModelProvider: ''
+    aorchestraMaxDelegations: 5
+
+- id: agent-loop
+  config:
+    maxParallelToolCalls: 1
