@@ -72,6 +72,19 @@ export {
   renderAgentFoldWorkspace,
 } from './harnesses/agentfold.js'
 export type { AgentFoldInteraction, AgentFoldState, AgentFoldSummary } from './harnesses/agentfold.js'
+export {
+  HIAGENT_PROJECTION_KEY,
+  applyHiAgent,
+  foldHiAgentState,
+  hiAgentProjectionDefinition,
+  hiAgentSimilarity,
+  initialHiAgentState,
+  renderHiAgentWorkspace,
+  selectHiAgentInteractions,
+} from './harnesses/hiagent.js'
+export type { HiAgentConfig, HiAgentState } from './harnesses/hiagent.js'
+export { foldToolEpisodes, initialToolEpisodeCollection } from './runtime/tool-episodes.js'
+export type { ToolEpisode, ToolEpisodeAction, ToolEpisodeCollection } from './runtime/tool-episodes.js'
 export type {
   MemoBrainConfig,
   MemoBrainState,

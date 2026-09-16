@@ -7,6 +7,8 @@ import type { ToolDefinition, ToolExecution } from '@deepseek-ai/dsh-tools'
 import { z } from 'zod'
 import { contentText } from '../runtime/content.js'
 import { registerHarnessPrompt } from '../runtime/prompt.js'
+import { foldToolEpisodes, initialToolEpisodeCollection } from '../runtime/tool-episodes.js'
+import type { ToolEpisode } from '../runtime/tool-episodes.js'
 
 const FOLD_TOOL = 'agentfold_fold'
 const AGENTFOLD_SOURCE = 'harness-all-in-dsh:agentfold'
@@ -15,13 +17,7 @@ const AGENTFOLD_SOURCE = 'harness-all-in-dsh:agentfold'
 export const AGENTFOLD_PROJECTION_KEY = 'harness-all-in-dsh/agentfold' as const
 
 /** One complete external action and observation retained at full fidelity. */
-export interface AgentFoldInteraction {
-  readonly id: number
-  readonly agentStep: number
-  readonly explanation: string
-  readonly actions: readonly { readonly tool: string; readonly arguments: string; readonly result: string; readonly isError: boolean }[]
-  readonly relatedSeqs: readonly number[]
-}
+export type AgentFoldInteraction = ToolEpisode
 
 /** One model-written summary over a contiguous partition of interactions. */
 export interface AgentFoldSummary {
@@ -29,19 +25,6 @@ export interface AgentFoldSummary {
   readonly end: number
   readonly text: string
   readonly relatedSeqs: readonly number[]
-}
-
-interface AgentFoldCall {
-  readonly step: number
-  readonly tool: string
-  readonly arguments: string
-  readonly seq: number
-}
-
-interface AgentFoldResult {
-  readonly result: string
-  readonly isError: boolean
-  readonly seq: number
 }
 
 interface PendingFold {
@@ -56,8 +39,8 @@ export interface AgentFoldState {
   readonly interactions: readonly AgentFoldInteraction[]
   readonly summaries: readonly AgentFoldSummary[]
   readonly assistants: Readonly<Record<string, { readonly text: string; readonly seq: number }>>
-  readonly calls: Readonly<Record<string, AgentFoldCall>>
-  readonly results: Readonly<Record<string, AgentFoldResult>>
+  readonly calls: Readonly<Record<string, { readonly step: number; readonly tool: string; readonly arguments: string; readonly seq: number }>>
+  readonly results: Readonly<Record<string, { readonly result: string; readonly isError: boolean; readonly seq: number }>>
   readonly pendingFolds: Readonly<Record<string, PendingFold>>
   readonly foldCount: number
   readonly surfacedInteractions: number
@@ -93,7 +76,7 @@ const stateSchema: z.ZodType<AgentFoldState> = z.object({
 /** Create the empty AgentFold workspace. */
 export function initialAgentFoldState(): AgentFoldState {
   return {
-    originalTask: null, interactions: [], summaries: [], assistants: {}, calls: {}, results: {},
+    originalTask: null, summaries: [], ...initialToolEpisodeCollection(),
     pendingFolds: {}, foldCount: 0, surfacedInteractions: 0,
   }
 }
@@ -116,16 +99,6 @@ function foldInput(raw: string): PendingFold | undefined {
 
 function toolResultId(event: Extract<SessionEvent, { type: 'tool/result' }>): string {
   return String(event.data.message.content[0].toolCallId)
-}
-
-function assistantExplanation(event: Extract<SessionEvent, { type: 'assistant/message' }>): string {
-  const visible = event.data.message.content
-    .filter((block): block is Extract<typeof block, { type: 'text' }> => block.type === 'text')
-    .map(block => block.text).join('\n').trim()
-  if (visible.length > 0) return visible
-  return event.data.message.content
-    .filter((block): block is Extract<typeof block, { type: 'reasoning' }> => block.type === 'reasoning')
-    .map(block => block.text).join('\n').trim()
 }
 
 function assertPartition(state: AgentFoldState, input: PendingFold): void {
@@ -152,10 +125,6 @@ export function applyAgentFoldSummary(state: AgentFoldState, input: PendingFold)
   return [...retained, { start: input.start, end: input.end, text: input.summary, relatedSeqs }]
 }
 
-function removeStepRecords<T extends { readonly step: number }>(records: Readonly<Record<string, T>>, step: number): Record<string, T> {
-  return Object.fromEntries(Object.entries(records).filter(([, value]) => value.step !== step))
-}
-
 /** Pure Session-event fold for AgentFold's two-level cognitive workspace. */
 export function foldAgentFoldState(state: AgentFoldState, event: SessionEvent): AgentFoldState {
   if (event.type === 'user/message') {
@@ -165,18 +134,12 @@ export function foldAgentFoldState(state: AgentFoldState, event: SessionEvent): 
     }
     return state
   }
-  if (event.type === 'assistant/message') {
-    return { ...state, assistants: { ...state.assistants, [String(event.data.step)]: { text: assistantExplanation(event), seq: Number(event.seq) } } }
-  }
   if (event.type === 'tool/call') {
     const callId = String(event.data.callId)
     if (event.data.name === FOLD_TOOL) {
       const input = foldInput(event.data.arguments)
       return input === undefined ? state : { ...state, pendingFolds: { ...state.pendingFolds, [callId]: input } }
     }
-    return { ...state, calls: { ...state.calls, [callId]: {
-      step: event.data.step, tool: event.data.name, arguments: event.data.arguments, seq: Number(event.seq),
-    } } }
   }
   if (event.type === 'tool/result') {
     const callId = toolResultId(event)
@@ -191,36 +154,8 @@ export function foldAgentFoldState(state: AgentFoldState, event: SessionEvent): 
         return { ...state, pendingFolds }
       }
     }
-    if (state.calls[callId] === undefined) return state
-    const block = event.data.message.content[0]
-    return { ...state, results: { ...state.results, [callId]: {
-      result: contentText(block.content), isError: block.isError === true, seq: Number(event.seq),
-    } } }
   }
-  if (event.type === 'step/end') {
-    const stepCalls = Object.entries(state.calls).filter(([callId, call]) => call.step === event.data.step && state.results[callId] !== undefined)
-    if (stepCalls.length === 0) return state
-    const assistant = state.assistants[String(event.data.step)]
-    const actions = stepCalls.map(([callId, call]) => ({
-      tool: call.tool, arguments: call.arguments, result: state.results[callId]?.result ?? '', isError: state.results[callId]?.isError ?? true,
-    }))
-    const relatedSeqs = [...new Set([
-      ...(assistant === undefined ? [] : [assistant.seq]),
-      ...stepCalls.flatMap(([callId, call]) => [call.seq, state.results[callId]?.seq].filter((seq): seq is number => seq !== undefined)),
-    ])].sort((left, right) => left - right)
-    const interaction: AgentFoldInteraction = {
-      id: state.interactions.length, agentStep: event.data.step, explanation: assistant?.text ?? '', actions, relatedSeqs,
-    }
-    const assistants = { ...state.assistants }
-    delete assistants[String(event.data.step)]
-    return {
-      ...state, interactions: [...state.interactions, interaction],
-      assistants,
-      calls: removeStepRecords(state.calls, event.data.step),
-      results: Object.fromEntries(Object.entries(state.results).filter(([callId]) => !stepCalls.some(([id]) => id === callId))),
-    }
-  }
-  return state
+  return foldToolEpisodes(state, event, new Set([FOLD_TOOL]))
 }
 
 /** Durable AgentFold workspace projection. */
