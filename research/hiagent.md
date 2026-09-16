@@ -1,5 +1,7 @@
 # HiAgent research note
 
+English | [中文](hiagent.zh.md)
+
 ## Sources
 
 - Official repository: https://github.com/HiAgent2024/HiAgent at `cebdd8e4eacec1a532ce2c0041db8902217b90ba`. The repository has no root license declaration.
@@ -12,7 +14,7 @@
 
 The checked-in official implementation retains the complete in-trial trajectory internally but sends only a fixed-size sample to the model. It always preserves the first and latest interaction. Middle interactions receive an inverted-Gaussian boundary score plus the novelty of their observation relative to the next middle observation, measured as one minus TF-IDF cosine similarity. The highest-value middle entries fill the remaining slots, while every unselected position remains visible as an `Omitted: Action-Observation pair` placeholder.
 
-The paper describes a broader hierarchical design based on subgoal chunks, observation summaries, and detailed trajectory retrieval. Those mechanisms are not present in the official repository's registered `OurAgent`; its only executable memory policy is value-based trajectory sampling. The Table 1 JIT adaptation follows that code path and calls it `HierarchicalMemory`.
+The paper describes a broader hierarchical design based on subgoal chunks, observation summaries, and detailed trajectory retrieval. Those mechanisms are not present in the official repository's registered `OurAgent`; its only executable memory policy is value-based trajectory sampling. The JIT fixed adaptation follows that code path and calls it `HierarchicalMemory`.
 
 ## DSH implementation
 

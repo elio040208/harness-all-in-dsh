@@ -1,5 +1,7 @@
 # AggAgent research note
 
+English | [中文](aggagent.zh.md)
+
 ## Sources
 
 - Official AggAgent repository: https://github.com/princeton-pli/AggAgent at `9638f7d88aee01eb636c02841e13a05bb2e3c449` (MIT).
@@ -26,5 +28,5 @@ The aggregator stays inside the standard DSH Agent loop. Rollouts run in the fir
 
 - The official evaluation pipeline generates rollout files before starting AggAgent. DSH performs that phase automatically in the parent Agent's first pre-step so generation and aggregation occur in one logged Session run.
 - The official aggregator can execute up to 100 private LLM iterations. DSH uses the configured standard Agent-loop limits so provider budgets and cancellation remain deployment-owned.
-- The official code supports special long-form and Qwen finish formats. This Table 1 reproduction implements the default XML solution format used by the general aggregation path.
+- The official code supports special long-form and Qwen finish formats. This reproduction implements the default XML solution format used by the general aggregation path.
 - The JIT adaptation runs rollouts sequentially. This implementation follows the paper and official parallel-scaling design by launching isolated children concurrently.

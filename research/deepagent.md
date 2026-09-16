@@ -1,5 +1,7 @@
 # DeepAgent research note
 
+English | [中文](deepagent.zh.md)
+
 ## Sources
 
 - Official repository: https://github.com/RUC-NLPIR/DeepAgent at `2e25aba3326295fff41fe1216792af353bb98558` (MIT).

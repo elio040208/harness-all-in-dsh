@@ -1,5 +1,7 @@
 # ReSum research note
 
+English | [中文](resum.zh.md)
+
 ## Sources
 
 - Original WebResummer repository: https://github.com/Alibaba-NLP/DeepResearch/tree/main/WebAgent/WebResummer at `f72f75d8c3eb842f2bbbab096a12206ff66e270f` (Apache-2.0).
@@ -11,7 +13,7 @@
 
 WebResummer runs a direct ReAct loop while keeping a separate full trajectory for evaluation. It measures the active model context after every action. With ReSum enabled, reaching 90% of the configured context budget invokes a summarizer over the conversation since the last reset. The first summary is grounded in the original question and recent history; later summaries also receive the preceding summary. A successful summary replaces the active context with the system prompt and a synthetic user observation containing the original question and the consolidated summary. Failed or empty summaries leave the active history unchanged.
 
-Table 1 classifies ReSum as summarized memory with no planner, ReAct execution, and the full tool registry. JIT's seed implementation adds a linear initial roadmap and an eight-step progress review. This reproduction follows the Table 1 classification and WebResummer's original execution loop instead of importing that extra planner.
+The fixed Harness interpretation classifies ReSum as summarized memory with no planner, ReAct execution, and the full tool registry. JIT's seed implementation adds a linear initial roadmap and an eight-step progress review. This reproduction follows that classification and WebResummer's original execution loop instead of importing the extra planner.
 
 ## DSH implementation
 

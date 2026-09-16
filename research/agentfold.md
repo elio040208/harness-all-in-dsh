@@ -1,5 +1,7 @@
 # AgentFold research note
 
+English | [中文](agentfold.zh.md)
+
 ## Sources
 
 - Official DeepResearch repository: https://github.com/Alibaba-NLP/DeepResearch at `f72f75d8c3eb842f2bbbab096a12206ff66e270f` (Apache-2.0).

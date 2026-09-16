@@ -1,5 +1,7 @@
 # Flash-Searcher research note
 
+English | [中文](flash-searcher.zh.md)
+
 ## Sources
 
 - Official Flash-Searcher repository: https://github.com/OPPO-PersonalAI/Flash-Searcher at `844f51f70dd641647760d90dbb027d0d45c111f0` (Apache-2.0).

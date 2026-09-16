@@ -1,5 +1,7 @@
 # MemoBrain research note
 
+English | [中文](memobrain.zh.md)
+
 ## Sources
 
 - Official MemoBrain repository: https://github.com/qhjqhj00/MemoBrain at `82f16e17c28313a57bf95d83340142b96507f3d1` (Apache-2.0).

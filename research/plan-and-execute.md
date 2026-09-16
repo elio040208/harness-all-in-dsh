@@ -1,5 +1,7 @@
 # Plan-and-Execute research note
 
+English | [中文](plan-and-execute.zh.md)
+
 ## Sources
 
 - Original Plan-and-Act repository: https://github.com/SqueezeAILab/plan-and-act at `534ed56f0d75e3059e54907859b89c901094f293` (Apache-2.0).

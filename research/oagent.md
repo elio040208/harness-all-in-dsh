@@ -1,5 +1,7 @@
 # OAgent research note
 
+English | [中文](oagent.zh.md)
+
 ## Sources
 
 - Official OAgents repository: https://github.com/OPPO-PersonalAI/OAgents at `027f2c4579ee7e7767bfe54c66df48a902d43e98` (Apache-2.0).
@@ -24,7 +26,7 @@ The shared Session-to-trajectory projection supplies each expert's final assista
 
 ## Intentional deviations
 
-- The official OAgents repository exposes general best-of-N and list-wise test-time scaling. This implementation follows the Table 1 fixed adaptation's one PE plus two ReAct experts and evidence-aware JSON critic.
+- The official OAgents repository exposes general best-of-N and list-wise test-time scaling. This implementation follows the fixed adaptation of one PE expert, two ReAct experts, and an evidence-aware JSON critic.
 - The JIT adaptation resets a copied filesystem baseline between sequential experts and restores the selected output. DSH isolates conversation state in child Sessions but does not overwrite or roll back the user's shared working tree; doing so inside a plugin could destroy unrelated or concurrent edits. Filesystem side effects therefore remain shared and are disclosed rather than silently reset.
 - Experts use native DSH tool calls and standard Agent loops instead of marker-delimited JSON actions and a nested Python loop.
 - The reference truncates evidence by characters. The shared DSH trajectory layer applies word-bounded truncation so Unicode text is not cut mid-codepoint.

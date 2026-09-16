@@ -1,4 +1,4 @@
-/** Stable ids for the Table 1 reproduction targets. */
+/** Stable ids for the fixed Harness reproduction targets. */
 export type HarnessId =
   | 'react'
   | 'plan-and-execute'
@@ -26,7 +26,7 @@ export interface HarnessDefinition {
   readonly primarySource: string
 }
 
-/** The complete, ordered Table 1 reproduction catalogue. */
+/** The complete, ordered fixed Harness reproduction catalogue. */
 export const HARNESS_CATALOG = [
   { id: 'react', displayName: 'ReAct', family: 'in-loop', mechanism: 'full-history tool loop', primarySource: 'https://arxiv.org/abs/2210.03629' },
   { id: 'plan-and-execute', displayName: 'Plan-and-Execute', family: 'in-loop', mechanism: 'linear roadmap followed by execution', primarySource: 'https://github.com/SqueezeAILab/plan-and-act' },

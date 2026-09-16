@@ -1,5 +1,7 @@
 # GAM research note
 
+English | [中文](gam.zh.md)
+
 ## Sources
 
 - Official General Agentic Memory repository: https://github.com/VectorSpaceLab/general-agentic-memory at `565db2cc2518d377e44389b82aecf3cc129d5fe5` (MIT).

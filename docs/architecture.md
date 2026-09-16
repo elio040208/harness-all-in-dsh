@@ -1,27 +1,54 @@
 # Architecture
 
-## Design rule
+English | [中文](architecture.zh.md)
 
-The project reproduces observable harness behavior through DSH extension points. It does not impose the paper's four-module source layout on DSH and does not embed the reference Python runtime.
+This project reproduces observable Harness behavior through DSH extension points while keeping the DSH Agent loop, Session log, model routing, and tool runtime as the execution foundation.
+
+## Design rules
+
+- Implement behavior as plugins, projections, scoped tools, and surface policies. Do not embed a second general-purpose Agent runtime.
+- Keep every model-visible plan, summary, memory state, delegation choice, and aggregation result reconstructable from Session data.
+- Keep child work in isolated DSH Sessions and copy only explicit results into a parent Session.
+- Expose deployment choices as plugin configuration. Keep model, tool, task, and budget settings outside Harness algorithms.
+- Record the inspected upstream revision and every intentional difference in `research/`.
 
 ## Execution families
 
 ### In-loop adaptations
 
-ReAct, Plan-and-Execute, ReSum, Flash-Searcher, GAM, MemoBrain, AgentFold, HiAgent, and DeepAgent retain the shipped DSH Agent loop. Plugins contribute durable state, prompt sections, scoped tools, request-time policy, and replay-aware surface replacement.
+ReAct, Plan-and-Execute, ReSum, Flash-Searcher, GAM, MemoBrain, AgentFold, HiAgent, and DeepAgent retain the shipped DSH Agent loop. Their plugins contribute prompt sections, durable projections, scoped tools, request-time guards, and replay-aware surface replacement.
 
 ### Coordinators
 
-AggAgent, OAgent, ROMA, and AOrchestra own a run interval that creates DSH child Agents through the subagent or workflow seams. Child transcripts remain isolated Session logs. Only explicit results enter a coordinator or parent Session.
+AggAgent, OAgent, ROMA, and AOrchestra own a bounded coordination action. They create DSH child Agents through the subagent service, keep each child transcript in its own Session, and persist the selected or aggregated result in the parent.
 
-## Logging rule
+## Shared components
 
-Anything that changes a later model request must be reconstructable from Session data. Planning, summarization, folding, memory selection, delegation configuration, aggregation, and voting therefore require durable events or ordinary logged messages. Direct auxiliary LLM calls that affect execution are not acceptable unless their input and output are represented by a purpose-built logged lifecycle.
+- `runtime/auxiliary-llm.ts` runs logged Harness-owned model calls with route inheritance and cancellation.
+- `runtime/dag.ts` validates dependency graphs and selects ready nodes.
+- `runtime/tool-episodes.ts` groups replayed calls and results into complete interactions.
+- `runtime/trajectory.ts` projects child Sessions into searchable, bounded trajectories.
+- `runtime/subagent-ensemble.ts` owns isolated child creation, tool denial, settlement, and disposal.
+- `presets/_shared/agent-tools.cordis.yml` defines the common model-facing tools used by Web presets.
+
+Harness-specific state remains in its owning module until at least two implementations need the same behavior.
+
+## Durability rule
+
+Anything that changes a later model request must be reproducible from Session data. Planning, summarization, folding, memory selection, delegation configuration, aggregation, and voting therefore use durable events, tool results, or plugin-authored messages. A private auxiliary call is acceptable only when its input, route, output, and failure state are represented in the Session lifecycle.
+
+Surface replacement changes what the model sees; it never deletes the underlying Session events. Replay reconstructs the same working state without rerunning prior model calls.
+
+## Preset ownership
+
+DSH Web mounts each Harness as an Agent preset. Presets share ordinary task capabilities, while the selected Harness owns its planning, memory, compaction, and coordinator behavior. The Web host continues to own process-wide services such as model routing, Session persistence, sandbox policy, subagent providers, and the parallel tool-call limit.
+
+Headless profiles use explicit overlays under `profiles/`. These overlays insert one Harness plugin and apply experiment-specific Agent-loop concurrency.
 
 ## Fidelity levels
 
-- `mechanism`: the defining state transition or orchestration algorithm is present.
+- `mechanism`: the defining state transition or orchestration algorithm is implemented.
 - `behavior`: the Harness completes end-to-end tasks through the same class of control flow as the reference.
-- `benchmark`: the implementation is evaluated under matched model, tool, task, and budget settings.
+- `benchmark`: matched model, tool, task, and budget experiments support a comparative result.
 
-No result may claim a higher fidelity level without evidence for every preceding level.
+A result must not claim a higher fidelity level without evidence for every preceding level. The current repository claims mechanism-level implementation for all included Harnesses and keeps benchmark conclusions out of the documentation.
