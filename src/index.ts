@@ -58,6 +58,10 @@ export {
   truncateWords,
 } from './runtime/trajectory.js'
 export type { AgentTrajectory, TrajectoryStep } from './runtime/trajectory.js'
+export { runIsolatedAgent } from './runtime/subagent-ensemble.js'
+export type { IsolatedAgentRequest } from './runtime/subagent-ensemble.js'
+export { applyOAgent, oagentExpertDigest, parseOAgentCriticVerdict } from './harnesses/oagent.js'
+export type { OAgentConfig, OAgentCriticVerdict, OAgentExpertDigest } from './harnesses/oagent.js'
 export type {
   MemoBrainConfig,
   MemoBrainState,

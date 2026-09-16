@@ -8,11 +8,11 @@ import { registerHarnessPrompt } from '../runtime/prompt.js'
 import {
   formatTrajectoryMetadata,
   searchTrajectory,
-  trajectoryFromEvents,
   trajectorySegment,
   trajectorySolutions,
 } from '../runtime/trajectory.js'
 import type { AgentTrajectory } from '../runtime/trajectory.js'
+import { runIsolatedAgent } from '../runtime/subagent-ensemble.js'
 
 const GET_SOLUTION_TOOL = 'aggagent_get_solution'
 const SEARCH_TOOL = 'aggagent_search_trajectory'
@@ -63,23 +63,16 @@ async function runRollout(
   provider: string,
   signal: AbortSignal,
 ): Promise<AgentTrajectory> {
-  const run = await ctx.subagents.start(provider, {
+  return await runIsolatedAgent(ctx, {
+    id,
     label: `AggAgent rollout ${id}`,
     parent,
     signal,
-    maxDepth: 1,
-    toolFilter: { deny: [...AGGREGATION_TOOLS] },
+    provider,
+    deniedTools: AGGREGATION_TOOLS,
     persona: 'Operate as an independent ReAct rollout. Use available task tools to gather evidence, inspect every observation, and return your best standalone final answer. Do not delegate or discuss aggregation.',
-    prompt: [{ type: 'text', text: `Independently solve the following task. You are rollout ${id} of ${count}; do not coordinate with other rollouts.\n\n${task}` }],
+    prompt: `Independently solve the following task. You are rollout ${id} of ${count}; do not coordinate with other rollouts.\n\n${task}`,
   })
-  try {
-    const result = await run.result
-    const events = run.localAgent?.session.snapshotEvents()
-    if (events === undefined) throw new Error(`AggAgent provider "${provider}" did not expose a local child Session`)
-    return trajectoryFromEvents(id, String(run.id), result.stopReason, events)
-  } finally {
-    await run.dispose()
-  }
 }
 
 function hasDisagreement(state: AggregationState): boolean {

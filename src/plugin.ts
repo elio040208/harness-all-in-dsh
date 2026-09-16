@@ -4,6 +4,7 @@ import { applyAggAgent } from './harnesses/aggagent.js'
 import { applyFlashSearcher } from './harnesses/flash-searcher.js'
 import { applyGam } from './harnesses/gam.js'
 import { applyMemoBrain } from './harnesses/memobrain.js'
+import { applyOAgent } from './harnesses/oagent.js'
 import { applyPlanAndExecute } from './harnesses/plan-and-execute.js'
 import { applyReact } from './harnesses/react.js'
 import { applyReSum } from './harnesses/resum.js'
@@ -16,24 +17,32 @@ export const inject = ['sessionProjections', 'systemPrompt', 'tools']
 
 /** Fixed Harness selection. More ids become valid only after their implementation lands. */
 export interface Config {
-  readonly harness?: 'react' | 'plan-and-execute' | 'resum' | 'flash-searcher' | 'gam' | 'memobrain' | 'aggagent'
+  readonly harness?: 'react' | 'plan-and-execute' | 'resum' | 'flash-searcher' | 'gam' | 'memobrain' | 'aggagent' | 'oagent'
   readonly summaryInterval?: number
   readonly reorgInterval?: number
   readonly memoryThresholdRatio?: number
   readonly auxiliaryMaxTokens?: number
   readonly rolloutCount?: number
   readonly subagentProvider?: string
+  readonly peWorkerCount?: number
+  readonly reactWorkerCount?: number
+  readonly criticMaxTokens?: number
+  readonly controllerReminderLimit?: number
 }
 
 /** Load-time validation for the implemented Harness set. */
 export const Config: z<Config> = z.object({
-  harness: z.union(['react', 'plan-and-execute', 'resum', 'flash-searcher', 'gam', 'memobrain', 'aggagent'] as const).default('react'),
+  harness: z.union(['react', 'plan-and-execute', 'resum', 'flash-searcher', 'gam', 'memobrain', 'aggagent', 'oagent'] as const).default('react'),
   summaryInterval: z.number().default(8),
   reorgInterval: z.number().default(4),
   memoryThresholdRatio: z.number().default(0.25),
   auxiliaryMaxTokens: z.number().default(8192),
   rolloutCount: z.number().default(4),
   subagentProvider: z.string().default('spawn'),
+  peWorkerCount: z.number().default(1),
+  reactWorkerCount: z.number().default(2),
+  criticMaxTokens: z.number().default(4096),
+  controllerReminderLimit: z.number().default(2),
 })
 
 /**
@@ -72,6 +81,17 @@ export function apply(ctx: Context, config: Config): void {
         applyAggAgent(ready, {
           rolloutCount: config.rolloutCount ?? 4,
           provider: config.subagentProvider ?? 'spawn',
+        })
+      })
+      return
+    case 'oagent':
+      ctx.inject(['subagents', 'llm'], ready => {
+        applyOAgent(ready, {
+          peWorkers: config.peWorkerCount ?? 1,
+          reactWorkers: config.reactWorkerCount ?? 2,
+          provider: config.subagentProvider ?? 'spawn',
+          criticMaxTokens: config.criticMaxTokens ?? 4096,
+          controllerReminderLimit: config.controllerReminderLimit ?? 2,
         })
       })
       return

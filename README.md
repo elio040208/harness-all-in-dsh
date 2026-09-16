@@ -39,7 +39,8 @@
 - GAM：已接入。完整工具结果进入持久 page store，模型为每页写 abstract；默认每 4 个 action step 检索并整合相关页面，再以 integrated memory 替换工作 surface。
 - MemoBrain：已接入。每个完整 tool episode 由辅助模型被动写入 task/subtask/evidence 依赖图；工作上下文达到 25% 时自动 flush 无效节点、fold 已完成路径，并保护首尾上下文生成新 checkpoint。
 - AggAgent：已接入。并行启动 4 个隔离的 DSH rollout Session，再通过 solution、ROUGE-L search、bounded segment 和 validated finish 工具进行证据优先聚合。
-- 其余 6 项：按 Table 1 顺序逐项研究和实现。
+- OAgent：已接入。默认顺序运行 1 个 Plan-and-Execute 专家和 2 个 ReAct 专家，再由同路由 critic 根据答案与工具证据选择或综合最终结果。
+- 其余 5 项：按 Table 1 顺序逐项研究和实现。
 
 安装到从 `headless` 模板创建的 profile 后即可运行：
 

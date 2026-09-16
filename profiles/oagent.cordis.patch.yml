@@ -1,0 +1,12 @@
+- id: harness-all-in-dsh
+  config:
+    harness: oagent
+    peWorkerCount: 1
+    reactWorkerCount: 2
+    subagentProvider: spawn
+    criticMaxTokens: 4096
+    controllerReminderLimit: 2
+
+- id: agent-loop
+  config:
+    maxParallelToolCalls: 1

@@ -11,7 +11,7 @@ Reference repositories are consulted during clean DSH-native reimplementation. T
 | GAM | https://github.com/VectorSpaceLab/general-agentic-memory |
 | MemoBrain | https://github.com/qhjqhj00/MemoBrain |
 | AggAgent | https://github.com/princeton-pli/AggAgent |
-| OAgent | https://github.com/OPPO-PersonalAI/OAgents |
+| OAgent | https://github.com/OPPO-PersonalAI/OAgents at `027f2c4579ee7e7767bfe54c66df48a902d43e98` |
 | AgentFold | https://arxiv.org/abs/2510.24699 |
 | HiAgent | https://github.com/HiAgent2024/HiAgent |
 | DeepAgent | https://github.com/RUC-NLPIR/DeepAgent |
