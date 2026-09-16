@@ -1,21 +1,24 @@
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
+import { applyPlanAndExecute } from './harnesses/plan-and-execute.js'
 import { applyReact } from './harnesses/react.js'
 
 /** Cordis loader name for the fixed-harness selector plugin. */
 export const name = 'harness-all-in-dsh'
 
 /** The selector requires the system-prompt registry supplied by dsh-base. */
-export const inject = ['systemPrompt']
+export const inject = ['sessionProjections', 'systemPrompt', 'tools']
 
 /** Fixed Harness selection. More ids become valid only after their implementation lands. */
 export interface Config {
-  readonly harness?: 'react'
+  readonly harness?: 'react' | 'plan-and-execute'
+  readonly summaryInterval?: number
 }
 
 /** Load-time validation for the implemented Harness set. */
 export const Config: z<Config> = z.object({
-  harness: z.const('react').default('react'),
+  harness: z.union(['react', 'plan-and-execute'] as const).default('react'),
+  summaryInterval: z.number().default(8),
 })
 
 /**
@@ -28,6 +31,9 @@ export function apply(ctx: Context, config: Config): void {
   switch (config.harness ?? 'react') {
     case 'react':
       applyReact(ctx)
+      return
+    case 'plan-and-execute':
+      applyPlanAndExecute(ctx, { summaryInterval: config.summaryInterval ?? 8 })
       return
   }
 }

@@ -33,7 +33,8 @@
 ## 当前状态
 
 - ReAct：已接入。复用 DSH 原生 `ReactLoopAgent`，保留完整历史和任务工具，关闭会改变该固定 Harness 的压缩、显式规划与递归委派机制。
-- 其余 12 项：按 Table 1 顺序逐项研究和实现。
+- Plan-and-Execute：已接入。先持久化 3–7 步线性 roadmap，再进入 ReAct 执行；默认每 8 个执行步骤持久化一次进度总结。
+- 其余 11 项：按 Table 1 顺序逐项研究和实现。
 
 安装到从 `headless` 模板创建的 profile 后即可运行：
 

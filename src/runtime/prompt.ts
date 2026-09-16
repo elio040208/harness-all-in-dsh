@@ -1,10 +1,11 @@
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-system-prompt'
+import type { AssembleContext } from '@deepseek-ai/dsh-system-prompt'
 
 /** A model-visible policy contributed by one fixed Harness implementation. */
 export interface HarnessPrompt {
   readonly id: string
-  readonly text: string
+  readonly text: string | ((context: AssembleContext) => string)
 }
 
 /**
