@@ -1,0 +1,14 @@
+- id: common-tools
+  name: cordis:include
+  config:
+    path: ../_shared/agent-tools.cordis.yml
+
+- id: harness
+  name: harness-all-in-dsh
+  config:
+    harness: oagent
+    peWorkerCount: 1
+    reactWorkerCount: 2
+    subagentProvider: spawn
+    criticMaxTokens: 4096
+    controllerReminderLimit: 2

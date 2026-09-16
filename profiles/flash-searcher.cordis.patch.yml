@@ -1,7 +1,9 @@
-- id: harness-all-in-dsh
-  config:
-    harness: flash-searcher
-    summaryInterval: 8
+- insert:
+    - id: harness-all-in-dsh
+      name: harness-all-in-dsh
+      config:
+        harness: flash-searcher
+        summaryInterval: 8
 
 - id: agent-loop
   config:

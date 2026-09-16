@@ -1,0 +1,14 @@
+- id: common-tools
+  name: cordis:include
+  config:
+    path: ../_shared/agent-tools.cordis.yml
+
+- id: harness
+  name: harness-all-in-dsh
+  config:
+    harness: aorchestra
+    subagentProvider: spawn
+    aorchestraModels: deepseek-v4.1-flash
+    aorchestraModelProvider: ''
+    aorchestraMaxDelegations: 5
+    controllerReminderLimit: 2

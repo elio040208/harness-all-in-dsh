@@ -1,6 +1,12 @@
-- id: harness-all-in-dsh
+- insert:
+    - id: harness-all-in-dsh
+      name: harness-all-in-dsh
+      config:
+        harness: resum
+
+- id: agent-loop
   config:
-    harness: resum
+    maxParallelToolCalls: 1
 
 # WebResummer summarizes at 90% of the working-context budget and then restarts
 # from the system prompt plus one summary observation. Retaining zero raw tokens

@@ -18,6 +18,7 @@
     "lib/**/*.js",
     "lib/**/*.d.ts",
     "cordis.patch.yml",
+    "presets/**/*",
     "profiles/*.cordis.patch.yml",
     "README.md",
     "LICENSE"

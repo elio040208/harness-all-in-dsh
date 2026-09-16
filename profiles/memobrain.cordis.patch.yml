@@ -1,8 +1,10 @@
-- id: harness-all-in-dsh
-  config:
-    harness: memobrain
-    memoryThresholdRatio: 0.25
-    auxiliaryMaxTokens: 8192
+- insert:
+    - id: harness-all-in-dsh
+      name: harness-all-in-dsh
+      config:
+        harness: memobrain
+        memoryThresholdRatio: 0.25
+        auxiliaryMaxTokens: 8192
 
 - id: agent-loop
   config:

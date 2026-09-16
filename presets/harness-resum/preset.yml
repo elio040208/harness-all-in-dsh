@@ -1,0 +1,3 @@
+name: Harness · ReSum
+description: 在上下文压力达到阈值时总结历史并从检查点继续。
+order: 103

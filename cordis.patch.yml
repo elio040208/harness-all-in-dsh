@@ -1,11 +1,20 @@
-# Shared fixed-harness layer. Target-specific behavior is selected by the
-# harness-all-in-dsh plugin config; this layer removes DSH mechanisms that
-# would otherwise silently turn the selected fixed harness into a hybrid.
+# Register the package-owned Agent presets when this bundle is installed in a
+# Web profile. Shipped and user preset roots remain enabled.
 
-- id: agent-loop
+- id: agent-presets
   config:
-    maxParallelToolCalls: 1
-    agents: []
+    default: standard
+    roots:
+      - path: !!js >-
+          process.getBuiltinModule('node:path').join(
+            ctx.get('pluginPackages').packageOf('harness-all-in-dsh', baseUrl).dir,
+            'presets'
+          )
+        trust: system
+
+# Headless fixed-harness profiles remove DSH mechanisms that would otherwise
+# turn the selected Harness into a hybrid. Web already owns these host rows;
+# each Agent preset composes only the model-facing mechanisms it needs.
 
 - id: plan-mode
   disabled: true
@@ -51,9 +60,3 @@
 
 - id: tool-ralph
   disabled: true
-
-- insert:
-    - id: harness-all-in-dsh
-      name: harness-all-in-dsh
-      config:
-        harness: react

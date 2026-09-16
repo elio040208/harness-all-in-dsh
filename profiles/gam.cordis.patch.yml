@@ -1,8 +1,10 @@
-- id: harness-all-in-dsh
-  config:
-    harness: gam
-    summaryInterval: 8
-    reorgInterval: 4
+- insert:
+    - id: harness-all-in-dsh
+      name: harness-all-in-dsh
+      config:
+        harness: gam
+        summaryInterval: 8
+        reorgInterval: 4
 
 - id: agent-loop
   config:

@@ -1,8 +1,10 @@
-- id: harness-all-in-dsh
-  config:
-    harness: aggagent
-    rolloutCount: 4
-    subagentProvider: spawn
+- insert:
+    - id: harness-all-in-dsh
+      name: harness-all-in-dsh
+      config:
+        harness: aggagent
+        rolloutCount: 4
+        subagentProvider: spawn
 
 - id: agent-loop
   config:

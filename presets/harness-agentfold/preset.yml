@@ -1,0 +1,3 @@
+name: Harness · AgentFold
+description: 由模型主动折叠指定的历史轨迹区间。
+order: 109

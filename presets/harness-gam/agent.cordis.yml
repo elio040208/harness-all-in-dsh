@@ -1,0 +1,11 @@
+- id: common-tools
+  name: cordis:include
+  config:
+    path: ../_shared/agent-tools.cordis.yml
+
+- id: harness
+  name: harness-all-in-dsh
+  config:
+    harness: gam
+    summaryInterval: 8
+    reorgInterval: 4

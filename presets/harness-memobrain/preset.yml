@@ -1,0 +1,3 @@
+name: Harness · MemoBrain
+description: 维护依赖感知的推理图，并自动 flush 与 fold。
+order: 106

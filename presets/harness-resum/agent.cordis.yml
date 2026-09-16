@@ -1,0 +1,24 @@
+- id: common-tools
+  name: cordis:include
+  config:
+    path: ../_shared/agent-tools.cordis.yml
+
+- id: resum-compaction
+  name: cordis:group
+  group: true
+  isolate:
+    compaction: true
+  config:
+    - id: compaction-basic
+      name: '@deepseek-ai/dsh-compaction-basic'
+      config:
+        auto: true
+        thresholdRatio: 0.9
+        retainTokens: 0
+        maxTokens: 4096
+        compactionRetries: 0
+
+- id: harness
+  name: harness-all-in-dsh
+  config:
+    harness: resum

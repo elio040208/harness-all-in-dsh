@@ -1,7 +1,9 @@
-- id: harness-all-in-dsh
-  config:
-    harness: hiagent
-    hiAgentMemorySize: 15
+- insert:
+    - id: harness-all-in-dsh
+      name: harness-all-in-dsh
+      config:
+        harness: hiagent
+        hiAgentMemorySize: 15
 
 - id: agent-loop
   config:

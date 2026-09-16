@@ -1,4 +1,10 @@
-- id: harness-all-in-dsh
+- insert:
+    - id: harness-all-in-dsh
+      name: harness-all-in-dsh
+      config:
+        harness: plan-and-execute
+        summaryInterval: 8
+
+- id: agent-loop
   config:
-    harness: plan-and-execute
-    summaryInterval: 8
+    maxParallelToolCalls: 1

@@ -1,4 +1,10 @@
 # Apply after installing this bundle into a profile cloned from `headless`.
-- id: harness-all-in-dsh
+- insert:
+    - id: harness-all-in-dsh
+      name: harness-all-in-dsh
+      config:
+        harness: react
+
+- id: agent-loop
   config:
-    harness: react
+    maxParallelToolCalls: 1

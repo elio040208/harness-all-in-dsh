@@ -47,12 +47,27 @@
 - AOrchestra：已接入。MainAgent 逐次动态指定子 Agent 的 `<instruction, context, tools, model>` 四元组；每次委派使用独立 DSH Session、模型路由和工具白名单，最后由显式 complete 动作汇总。
 - Table 1 的 13 个固定 Harness 已全部接入；后续工作是建立同模型、同任务、同预算的评测矩阵。
 
-安装到从 `headless` 模板创建的 profile 后即可运行：
+## 在 DSH Web 中选择 Harness
+
+把项目作为 bundle 安装到 `web` profile，重启 Web 后，新建 Session 的模式选择器会显示 13 个以 `Harness ·` 开头的模式：
+
+```sh
+dsh plugin --profile web add /absolute/path/to/harness-all-in-dsh
+dsh web
+```
+
+每个模式都是独立的 Agent preset。公共的 Shell、文件、搜索、Skill 和提问工具由一个共享 composition 提供；计划、记忆、折叠、压缩和子 Agent 编排只由选中的 Harness 提供。已有消息的 Session 不能中途更换 preset，请新建 Session 后再选择模式。
+
+Web 的工具调用并发上限属于部署级设置，因此这些 preset 不会覆盖它。需要严格复现实验并发上限时，使用下面的独立 `headless` profile overlay。
+
+## 从命令行运行
+
+安装到从 `headless` 模板创建的 profile 后，显式应用目标 Harness 的 overlay：
 
 ```sh
 dsh --profile harness-react --from-default-profile headless --dump-config
 dsh plugin --profile harness-react add /absolute/path/to/harness-all-in-dsh
-dsh --profile harness-react "your task"
+dsh --profile harness-react --patch /absolute/path/to/harness-all-in-dsh/profiles/react.cordis.patch.yml "your task"
 ```
 
 源码安装会执行 `prepare` 构建；从 GitHub 安装时需要按 DSH 提示允许该构建脚本。各 Harness 的原始实现、固定 revision 与有意偏差记录在 `research/` 下的同名说明中。

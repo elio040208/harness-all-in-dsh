@@ -1,0 +1,3 @@
+name: Harness · OAgent
+description: 运行异构专家路径，并由 critic 选择或综合结果。
+order: 108

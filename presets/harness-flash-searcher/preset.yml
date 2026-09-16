@@ -1,0 +1,3 @@
+name: Harness · Flash-Searcher
+description: 用依赖 DAG 调度目标，并周期性复查搜索路径。
+order: 104
