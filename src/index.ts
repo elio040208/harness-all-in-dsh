@@ -27,3 +27,12 @@ export type {
 } from './harnesses/flash-searcher.js'
 export { assertValidDag, readyDagNodeIds } from './runtime/dag.js'
 export type { DependencyNode } from './runtime/dag.js'
+export {
+  GAM_PROJECTION_KEY,
+  foldGamState,
+  gamProjectionDefinition,
+  initialGamState,
+  renderGamCheckpoint,
+  renderGamPrompt,
+} from './harnesses/gam.js'
+export type { GamConfig, GamPage, GamState } from './harnesses/gam.js'

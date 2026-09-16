@@ -36,7 +36,8 @@
 - Plan-and-Execute：已接入。先持久化 3–7 步线性 roadmap，再进入 ReAct 执行；默认每 8 个执行步骤持久化一次进度总结。
 - ReSum：已接入。在上下文压力达到 90% 时压缩全部非 system 历史，Session 保留完整事件轨迹，下一步从持久化 checkpoint 继续。
 - Flash-Searcher：已接入。结构化 DAG 记录 1–5 个 goal、依赖和顺序 fallback path；DSH 最多并发执行 5 个跨 goal 调用，并默认每 8 步要求一次完整图 review。
-- 其余 9 项：按 Table 1 顺序逐项研究和实现。
+- GAM：已接入。完整工具结果进入持久 page store，模型为每页写 abstract；默认每 4 个 action step 检索并整合相关页面，再以 integrated memory 替换工作 surface。
+- 其余 8 项：按 Table 1 顺序逐项研究和实现。
 
 安装到从 `headless` 模板创建的 profile 后即可运行：
 

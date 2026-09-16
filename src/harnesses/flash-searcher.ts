@@ -340,11 +340,10 @@ export function applyFlashSearcher(ctx: Context, config: FlashSearcherConfig): v
     if (state === undefined) return 'Flash-Searcher projection is unavailable'
     if (state.goals === null) {
       if (exec.name !== SUBMIT_DAG_TOOL) return `Call ${SUBMIT_DAG_TOOL} before task tools.`
-      return state.pendingPlan === null ? undefined : 'A DAG submission is already in progress.'
+      return undefined
     }
-    if (reviewDue(state, config.summaryInterval)) return exec.name === REVIEW_DAG_TOOL ? undefined : `Call ${REVIEW_DAG_TOOL} before the next task action.`
+    if (reviewDue(state, config.summaryInterval)) return exec.name === REVIEW_DAG_TOOL || exec.name.startsWith('gam_') ? undefined : `Call ${REVIEW_DAG_TOOL} before the next task action.`
     if (exec.name === SUBMIT_DAG_TOOL) return 'The initial DAG is already fixed.'
-    if (exec.name === REVIEW_DAG_TOOL && state.pendingReview !== null) return 'A DAG review is already in progress.'
     return undefined
   })
   registerHarnessPrompt(ctx, {

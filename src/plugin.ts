@@ -1,6 +1,7 @@
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { applyFlashSearcher } from './harnesses/flash-searcher.js'
+import { applyGam } from './harnesses/gam.js'
 import { applyPlanAndExecute } from './harnesses/plan-and-execute.js'
 import { applyReact } from './harnesses/react.js'
 import { applyReSum } from './harnesses/resum.js'
@@ -13,14 +14,16 @@ export const inject = ['sessionProjections', 'systemPrompt', 'tools']
 
 /** Fixed Harness selection. More ids become valid only after their implementation lands. */
 export interface Config {
-  readonly harness?: 'react' | 'plan-and-execute' | 'resum' | 'flash-searcher'
+  readonly harness?: 'react' | 'plan-and-execute' | 'resum' | 'flash-searcher' | 'gam'
   readonly summaryInterval?: number
+  readonly reorgInterval?: number
 }
 
 /** Load-time validation for the implemented Harness set. */
 export const Config: z<Config> = z.object({
-  harness: z.union(['react', 'plan-and-execute', 'resum', 'flash-searcher'] as const).default('react'),
+  harness: z.union(['react', 'plan-and-execute', 'resum', 'flash-searcher', 'gam'] as const).default('react'),
   summaryInterval: z.number().default(8),
+  reorgInterval: z.number().default(4),
 })
 
 /**
@@ -42,6 +45,9 @@ export function apply(ctx: Context, config: Config): void {
       return
     case 'flash-searcher':
       applyFlashSearcher(ctx, { summaryInterval: config.summaryInterval ?? 8 })
+      return
+    case 'gam':
+      applyGam(ctx, { summaryInterval: config.summaryInterval ?? 8, reorgInterval: config.reorgInterval ?? 4 })
       return
   }
 }
