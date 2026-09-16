@@ -11,3 +11,19 @@ export {
 } from './harnesses/plan-and-execute.js'
 export type { LinearPlanState, PlanAndExecuteConfig } from './harnesses/plan-and-execute.js'
 export { RESUM_PROMPT } from './harnesses/resum.js'
+export {
+  FLASH_SEARCHER_PROJECTION_KEY,
+  flashSearcherProjectionDefinition,
+  foldFlashSearcherState,
+  initialFlashSearcherState,
+  renderFlashSearcherPrompt,
+} from './harnesses/flash-searcher.js'
+export type {
+  FlashGoal,
+  FlashGoalReview,
+  FlashPath,
+  FlashSearcherConfig,
+  FlashSearcherState,
+} from './harnesses/flash-searcher.js'
+export { assertValidDag, readyDagNodeIds } from './runtime/dag.js'
+export type { DependencyNode } from './runtime/dag.js'

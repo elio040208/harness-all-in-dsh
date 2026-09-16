@@ -1,0 +1,8 @@
+- id: harness-all-in-dsh
+  config:
+    harness: flash-searcher
+    summaryInterval: 8
+
+- id: agent-loop
+  config:
+    maxParallelToolCalls: 5
