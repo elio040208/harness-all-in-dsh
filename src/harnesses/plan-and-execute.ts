@@ -4,7 +4,9 @@ import type { SessionEvent } from '@deepseek-ai/dsh-session'
 import type { ProjectionDefinition } from '@deepseek-ai/dsh-session-projection'
 import type { ToolDefinition, ToolExecution } from '@deepseek-ai/dsh-tools'
 import { z } from 'zod'
-import { registerHarnessContext, registerHarnessPrompt } from '../runtime/prompt.js'
+import { registerHarnessPrompt } from '../runtime/prompt.js'
+import { installHarnessProtocol } from '../runtime/protocol.js'
+import type { HarnessProtocolMode, HarnessProtocolPhase } from '../runtime/protocol.js'
 
 const SUBMIT_PLAN_TOOL = 'submit_plan'
 const RECORD_PROGRESS_TOOL = 'record_progress'
@@ -141,6 +143,7 @@ export const linearPlanProjectionDefinition = {
 /** Tunable periodic summary cadence from the reference implementation. */
 export interface PlanAndExecuteConfig {
   readonly summaryInterval: number
+  readonly protocolMode: HarnessProtocolMode
 }
 
 function summaryDue(state: LinearPlanState, interval: number): boolean {
@@ -153,16 +156,43 @@ function summaryDue(state: LinearPlanState, interval: number): boolean {
 const PLAN_AND_EXECUTE_PROMPT = 'Operate as a Plan-and-Execute agent. Follow the accepted roadmap mainly in order, use tool observations as evidence, and do not claim a step is complete without verification. Reuse known observations before making another call. Provide the final answer only when the roadmap\'s required outcomes are resolved.'
 
 /** Render the current roadmap and execution requirement from replayed state. */
-export function renderPlanAndExecuteContext(state: LinearPlanState, interval: number): string {
+export function renderPlanAndExecuteContext(
+  state: LinearPlanState,
+  interval: number,
+  mode: HarnessProtocolMode = 'strict',
+): string {
   if (state.plan === null) {
     return `Plan-and-Execute state: no roadmap has been accepted. Before using any task tool, call ${SUBMIT_PLAN_TOOL} exactly once with a 3-7 step ordered roadmap. Each step must be specific and actionable, later steps must build on earlier results, and a verification step must appear near the end.`
   }
   const plan = state.plan.map((step, index) => `${index + 1}. ${step}`).join('\n')
   const summary = state.latestSummary === null ? '' : `\n\nLatest progress summary:\n${state.latestSummary}`
   const periodic = summaryDue(state, interval)
-    ? `\n\nBefore taking another task action, call ${RECORD_PROGRESS_TOOL} with a concise account of completed roadmap steps, unresolved steps, and the best next action.`
+    ? mode === 'strict'
+      ? `\n\nBefore taking another task action, call ${RECORD_PROGRESS_TOOL} with a concise account of completed roadmap steps, unresolved steps, and the best next action.`
+      : `\n\nA progress review is due. Call ${RECORD_PROGRESS_TOOL} soon with a concise account of completed roadmap steps, unresolved steps, and the best next action.`
     : ''
   return `Plan-and-Execute state.\n\nRoadmap:\n${plan}${summary}${periodic}`
+}
+
+function protocolPhase(state: LinearPlanState, config: PlanAndExecuteConfig): HarnessProtocolPhase {
+  if (state.plan === null) return {
+    id: 'need-plan',
+    context: renderPlanAndExecuteContext(state, config.summaryInterval, config.protocolMode),
+    allowedTools: new Set([SUBMIT_PLAN_TOOL]),
+    denial: `Call ${SUBMIT_PLAN_TOOL} in a dedicated response before task tools.`,
+  }
+  if (summaryDue(state, config.summaryInterval)) return {
+    id: 'need-progress-review',
+    context: renderPlanAndExecuteContext(state, config.summaryInterval, config.protocolMode),
+    ...config.protocolMode === 'strict'
+      ? { allowedTools: new Set([RECORD_PROGRESS_TOOL]), denial: `Call ${RECORD_PROGRESS_TOOL} in a dedicated response before the next task action.` }
+      : { deniedTools: new Set([SUBMIT_PLAN_TOOL]) },
+  }
+  return {
+    id: 'working',
+    context: renderPlanAndExecuteContext(state, config.summaryInterval, config.protocolMode),
+    deniedTools: new Set([SUBMIT_PLAN_TOOL, RECORD_PROGRESS_TOOL]),
+  }
 }
 
 function requireAgent(exec: ToolExecution, toolName: string): Agent {
@@ -239,28 +269,13 @@ export function applyPlanAndExecute(ctx: Context, config: PlanAndExecuteConfig):
   ctx.sessionProjections.register(linearPlanProjectionDefinition)
   ctx.tools.register(submitPlanTool())
   ctx.tools.register(recordProgressTool())
-  ctx.tools.guard((exec) => {
-    if (exec.agent === undefined) return undefined
-    const state = ctx.sessionProjections.stateOf(exec.agent.session, PLAN_AND_EXECUTE_PROJECTION_KEY)
-    if (state === undefined) return 'Plan-and-Execute projection is unavailable'
-    if (state.plan === null) {
-      return exec.name === SUBMIT_PLAN_TOOL ? undefined : `Call ${SUBMIT_PLAN_TOOL} before task tools.`
-    }
-    if (summaryDue(state, config.summaryInterval)) {
-      return exec.name === RECORD_PROGRESS_TOOL ? undefined : `Call ${RECORD_PROGRESS_TOOL} before the next task action.`
-    }
-    if (exec.name === SUBMIT_PLAN_TOOL) return 'The initial roadmap is already fixed.'
-    if (exec.name === RECORD_PROGRESS_TOOL) return 'A progress review is not due yet.'
-    return undefined
-  })
   registerHarnessPrompt(ctx, { id: 'plan-and-execute', text: PLAN_AND_EXECUTE_PROMPT })
-  registerHarnessContext(ctx, {
+  installHarnessProtocol(ctx, {
     id: 'plan-and-execute',
-    text: ({ agent }) => {
-      if (agent === undefined) return ''
+    resolve: (agent) => {
       const state = ctx.sessionProjections.stateOf(agent.session, PLAN_AND_EXECUTE_PROJECTION_KEY)
       if (state === undefined) throw new Error('Plan-and-Execute projection is unavailable')
-      return renderPlanAndExecuteContext(state, config.summaryInterval)
+      return protocolPhase(state, config)
     },
   })
 }

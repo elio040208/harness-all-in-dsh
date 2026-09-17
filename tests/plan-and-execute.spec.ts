@@ -36,6 +36,8 @@ describe('Plan-and-Execute Harness', () => {
     }
     expect(state.actionSteps).toBe(8)
     expect(renderPlanAndExecuteContext(state, 8)).toContain('call record_progress')
+    expect(renderPlanAndExecuteContext(state, 8, 'guided')).toContain('Call record_progress soon')
+    expect(renderPlanAndExecuteContext(state, 8, 'guided')).not.toContain('Before taking another task action')
 
     state = foldLinearPlanState(state, event({
       type: 'tool/call', seq: 9, time: 0,

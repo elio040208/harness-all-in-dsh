@@ -13,6 +13,8 @@ export interface HarnessProtocolPhase {
   readonly context: string
   /** Tool names admitted during this response; omission admits every visible tool. */
   readonly allowedTools?: ReadonlySet<string>
+  /** Tool names hidden and denied while every other visible tool remains admitted. */
+  readonly deniedTools?: ReadonlySet<string>
   /** Explanation returned only when the model calls a tool hidden by this phase. */
   readonly denial?: string
 }
@@ -30,8 +32,13 @@ export interface HarnessProtocolHandle {
 }
 
 function filterTools(assembly: PromptAssembly, phase: HarnessProtocolPhase): PromptAssembly {
-  if (phase.allowedTools === undefined) return assembly
-  return { ...assembly, tools: assembly.tools.filter(tool => phase.allowedTools?.has(tool.name) === true) }
+  if (phase.allowedTools === undefined && phase.deniedTools === undefined) return assembly
+  return { ...assembly, tools: assembly.tools.filter(tool => admits(phase, tool.name)) }
+}
+
+function admits(phase: HarnessProtocolPhase, tool: string): boolean {
+  return (phase.allowedTools === undefined || phase.allowedTools.has(tool))
+    && phase.deniedTools?.has(tool) !== true
 }
 
 /**
@@ -71,7 +78,7 @@ export function installHarnessProtocol(ctx: Context, protocol: HarnessProtocol):
     const agent = exec.agent
     if (agent === undefined) return undefined
     const phase = active.get(agent) ?? protocol.resolve(agent)
-    if (phase.allowedTools === undefined || phase.allowedTools.has(exec.name)) return undefined
+    if (admits(phase, exec.name)) return undefined
     return phase.denial ?? `Harness protocol phase "${phase.id}" does not allow ${exec.name}.`
   })
 
