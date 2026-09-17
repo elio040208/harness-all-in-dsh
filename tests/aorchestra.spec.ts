@@ -1,6 +1,11 @@
 import { readFileSync } from 'node:fs'
+import { Context } from '@deepseek-ai/cordis'
+import type { Agent } from '@deepseek-ai/dsh-agent'
+import type { SessionId } from '@deepseek-ai/dsh-session'
+import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
+import ToolRuntime from '@deepseek-ai/dsh-tools'
 import { describe, expect, it } from 'vitest'
-import { aorchestraTraceSummary, renderAOrchestraContext, trajectoryFinalAnswer } from '../src/index.js'
+import { aorchestraToolCatalogue, aorchestraTraceSummary, renderAOrchestraContext, trajectoryFinalAnswer } from '../src/index.js'
 import type { AgentTrajectory, AOrchestraConfig } from '../src/index.js'
 
 const trajectory: AgentTrajectory = {
@@ -38,5 +43,22 @@ describe('AOrchestra Harness', () => {
     }
     expect(renderAOrchestraContext(2, config, '- bash: run commands'))
       .toContain('Delegation budget: 2/5 used')
+  })
+
+  it('builds child capabilities from the registry rather than the filtered parent request', async () => {
+    const ctx = new Context()
+    try {
+      await ctx.plugin(SystemPrompt, {})
+      await ctx.plugin(ToolRuntime)
+      for (const name of ['bash', 'aorchestra_delegate', 'aorchestra_complete']) ctx.tools.register({
+        name, description: name, parameters: { type: 'object', properties: {} },
+        output: { schema: { type: 'string' }, render: () => [] },
+        execute: () => Promise.resolve(name),
+      })
+      const agent = { id: 'parent' as SessionId } as Agent
+      expect(aorchestraToolCatalogue(ctx, agent).map(tool => tool.name)).toEqual(['bash'])
+    } finally {
+      await ctx.fiber.dispose()
+    }
   })
 })

@@ -4,6 +4,7 @@ import { createUserMessage } from '@deepseek-ai/dsh-llm'
 import type {} from '@deepseek-ai/dsh-subagent'
 import type { ToolDefinition, ToolExecution } from '@deepseek-ai/dsh-tools'
 import { registerHarnessContext, registerHarnessPrompt } from '../runtime/prompt.js'
+import { installHarnessProtocol } from '../runtime/protocol.js'
 import { runIsolatedAgent } from '../runtime/subagent-ensemble.js'
 import { trajectoryFinalAnswer, truncateWords } from '../runtime/trajectory.js'
 import type { AgentTrajectory } from '../runtime/trajectory.js'
@@ -60,8 +61,8 @@ function nonEmptyString(value: unknown, name: string): string {
 }
 
 /** List ordinary task tools that AOrchestra may assign to a child. */
-export function aorchestraToolCatalogue(agent: Agent): readonly SearchableTool[] {
-  return ((agent.session.requestHeader()?.tools ?? []) as readonly SearchableTool[])
+export function aorchestraToolCatalogue(ctx: Context, agent: Agent): readonly SearchableTool[] {
+  return ctx.tools.schemas(agent)
     .filter(tool => tool.name !== DELEGATE_TOOL && tool.name !== COMPLETE_TOOL)
 }
 
@@ -129,7 +130,7 @@ function delegateTool(ctx: Context, config: AOrchestraConfig, states: WeakMap<Ag
       const context = typeof input.context === 'string' ? input.context.trim() : (() => { throw new Error('context must be a string') })()
       const model = nonEmptyString(input.model, 'model')
       if (!config.models.includes(model)) throw new Error(`model must be one of: ${config.models.join(', ')}`)
-      const tools = selectedTools(input.tools, aorchestraToolCatalogue(parent))
+      const tools = selectedTools(input.tools, aorchestraToolCatalogue(ctx, parent))
       const provider = selectedProvider(parent, config.modelProvider)
       const tuple: AOrchestraTuple = { instruction, context, tools, provider, model }
       const attempt = state.delegations.length + 1
@@ -182,9 +183,9 @@ function completeTool(states: WeakMap<Agent, AOrchestraState>): ToolDefinition {
   }
 }
 
-function toolCatalogueText(agent: Agent | undefined): string {
+function toolCatalogueText(ctx: Context, agent: Agent | undefined): string {
   if (agent === undefined) return '(available task tools are supplied at runtime)'
-  const tools = aorchestraToolCatalogue(agent)
+  const tools = aorchestraToolCatalogue(ctx, agent)
   return tools.length === 0 ? '(none)' : tools.map(tool => `- ${tool.name}: ${(tool.description ?? '').slice(0, 180)}`).join('\n')
 }
 
@@ -210,12 +211,6 @@ export function applyAOrchestra(ctx: Context, config: AOrchestraConfig): void {
   const reminders = new WeakMap<Agent, number>()
   ctx.tools.register(delegateTool(ctx, config, states))
   ctx.tools.register(completeTool(states))
-  ctx.tools.guard(exec => {
-    const agent = exec.agent
-    if (agent === undefined || agent.session.header.parentSession !== undefined) return undefined
-    return exec.name === DELEGATE_TOOL || exec.name === COMPLETE_TOOL
-      ? undefined : `AOrchestra MainAgent may use only ${DELEGATE_TOOL} and ${COMPLETE_TOOL}.`
-  })
   ctx.on('agent/turn-stopping', ({ agent }) => {
     if (agent.session.header.parentSession !== undefined || states.get(agent)?.completed === true) return
     const count = reminders.get(agent) ?? 0
@@ -231,7 +226,16 @@ export function applyAOrchestra(ctx: Context, config: AOrchestraConfig): void {
     id: 'aorchestra',
     text: ({ agent }) => {
       if (agent === undefined || agent.session.header.parentSession !== undefined) return ''
-      return renderAOrchestraContext(states.get(agent)?.delegations.length ?? 0, config, toolCatalogueText(agent))
+      return renderAOrchestraContext(states.get(agent)?.delegations.length ?? 0, config, toolCatalogueText(ctx, agent))
     },
+  })
+  installHarnessProtocol(ctx, {
+    id: 'aorchestra-protocol',
+    resolve: agent => agent.session.header.parentSession !== undefined
+      ? { id: 'child', context: '' }
+      : {
+          id: 'coordinate', context: '', allowedTools: new Set([DELEGATE_TOOL, COMPLETE_TOOL]),
+          denial: `AOrchestra MainAgent may use only ${DELEGATE_TOOL} and ${COMPLETE_TOOL}.`,
+        },
   })
 }
