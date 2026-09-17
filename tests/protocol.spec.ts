@@ -56,7 +56,7 @@ describe('Harness response protocol', () => {
       expect(handle.active(agent)?.id).toBe('work')
       expect(await execute(ctx, agent, 'task_one')).toBe('ran:task_one')
       expect(await execute(ctx, agent, 'task_two')).toBe('ran:task_two')
-      expect(await execute(ctx, agent, 'maintain')).toBe('Error: Task phase only.')
+      expect(await execute(ctx, agent, 'maintain')).toBe('Error: [harness-protocol] Task phase only.')
 
       const nextAssembly = await ctx.systemPrompt.assemble(assembleContextFor(agent))
       expect(nextAssembly.tools.map(tool => tool.name)).toEqual(['maintain'])
@@ -65,7 +65,7 @@ describe('Harness response protocol', () => {
         messages: [], turn: 1, step: 2, signal,
       }, () => Promise.resolve({ kind: 'enter', messages: [] }))
       expect(handle.active(agent)?.id).toBe('maintain')
-      expect(await execute(ctx, agent, 'task_one')).toBe('Error: Maintenance is required.')
+      expect(await execute(ctx, agent, 'task_one')).toBe('Error: [harness-protocol] Maintenance is required.')
       expect(await execute(ctx, agent, 'maintain')).toBe('ran:maintain')
     } finally {
       await ctx.fiber.dispose()

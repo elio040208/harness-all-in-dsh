@@ -7,8 +7,9 @@ import type { ToolDefinition, ToolExecution } from '@deepseek-ai/dsh-tools'
 import { z } from 'zod'
 import { applyFlashSearcher } from './flash-searcher.js'
 import { contentText } from '../runtime/content.js'
-import { registerHarnessContext, registerHarnessPrompt } from '../runtime/prompt.js'
-import type { HarnessProtocolMode } from '../runtime/protocol.js'
+import { registerHarnessPrompt } from '../runtime/prompt.js'
+import { HARNESS_PROTOCOL_DENIAL_PREFIX, installHarnessProtocol } from '../runtime/protocol.js'
+import type { HarnessProtocolMode, HarnessProtocolPhase } from '../runtime/protocol.js'
 
 const MEMORIZE_TOOL = 'gam_memorize_pages'
 const SEARCH_TOOL = 'gam_search_pages'
@@ -134,7 +135,6 @@ export function foldGamState(state: GamState, event: SessionEvent): GamState {
     if (managementTool(event.data.name)) return state
     return {
       ...state,
-      taskSteps: state.taskSteps.includes(event.data.step) ? state.taskSteps : [...state.taskSteps, event.data.step],
       pendingCalls: { ...state.pendingCalls, [id]: { step: event.data.step, tool: event.data.name, arguments: event.data.arguments } },
     }
   }
@@ -159,14 +159,19 @@ export function foldGamState(state: GamState, event: SessionEvent): GamState {
     const nextPending = { ...state.pendingCalls }
     delete nextPending[id]
     const block = event.data.message.content[0]
+    const resultText = contentText(block.content)
+    if (block.isError === true && resultText.startsWith(`Error: ${HARNESS_PROTOCOL_DENIAL_PREFIX}`)) {
+      return { ...state, pendingCalls: nextPending }
+    }
     return {
       ...state,
+      taskSteps: state.taskSteps.includes(pending.step) ? state.taskSteps : [...state.taskSteps, pending.step],
       pages: [...state.pages, {
         id: `page-${state.pages.length}`,
         step: pending.step,
         tool: pending.tool,
         arguments: pending.arguments,
-        content: contentText(block.content),
+        content: resultText,
         isError: block.isError === true,
         abstract: null,
       }],
@@ -189,7 +194,7 @@ export function foldGamState(state: GamState, event: SessionEvent): GamState {
 
 /** Durable GAM page-store projection. */
 export const gamProjectionDefinition = {
-  key: GAM_PROJECTION_KEY, stateSchema, init: initialGamState, apply: foldGamState, stateVersion: 1,
+  key: GAM_PROJECTION_KEY, stateSchema, init: initialGamState, apply: foldGamState, stateVersion: 2,
 } satisfies ProjectionDefinition<typeof GAM_PROJECTION_KEY, GamState>
 
 function requireAgent(exec: ToolExecution, name: string): Agent {
@@ -282,16 +287,43 @@ function reorgDue(state: GamState, interval: number): boolean {
 const GAM_PROMPT = 'Use General Agentic Memory (GAM). Complete tool observations are retained as immutable pages; concise abstracts are the lightweight MemoryStore. Research retrieves full pages only when needed and integrates facts relevant to the original task. Follow the current GAM state directive before another task action. Do not invent page ids or facts.'
 
 /** Render the Memorizer catalogue and current Researcher state. */
-export function renderGamContext(state: GamState, interval: number): string {
+export function renderGamContext(
+  state: GamState,
+  interval: number,
+  mode: HarnessProtocolMode = 'strict',
+): string {
   const missing = state.pages.filter(page => page.abstract === null)
   const catalog = state.pages.map(page => `${page.id}: ${page.abstract ?? '(abstract pending)'}`).join('\n') || '(empty)'
   const integrated = state.integratedMemory ?? '(none yet)'
   const directive = missing.length > 0
     ? `Before another task tool, call ${MEMORIZE_TOOL} with one self-contained factual abstract for each pending page: ${missing.map(page => page.id).join(', ')}.`
     : reorgDue(state, interval)
-      ? `GAM research is due. Use ${SEARCH_TOOL} one or more times over the abstract catalogue, then call ${INTEGRATE_TOOL} with a consolidated factual memory and the supporting page ids before another task action.`
+      ? mode === 'strict'
+        ? `GAM research is due. Use ${SEARCH_TOOL} one or more times over the abstract catalogue, then call ${INTEGRATE_TOOL} with a consolidated factual memory and the supporting page ids before another task action.`
+        : `GAM research is due. Use ${SEARCH_TOOL} over the abstract catalogue and call ${INTEGRATE_TOOL} soon with a consolidated factual memory and the supporting page ids.`
       : 'Continue the DAG-guided task. Search the page store whenever older exact evidence is needed.'
   return `GAM state.\n\n${directive}\n\nIntegrated memory:\n${integrated}\n\nMemory catalogue:\n${catalog}`
+}
+
+function protocolPhase(state: GamState, config: GamConfig): HarnessProtocolPhase {
+  const context = renderGamContext(state, config.reorgInterval, config.protocolMode)
+  if (state.pages.some(page => page.abstract === null)) return {
+    id: 'need-memorization',
+    context,
+    allows: name => name === MEMORIZE_TOOL || name === 'submit_dag_plan' || name === 'record_dag_review',
+    denial: `Call ${MEMORIZE_TOOL} in a dedicated response before another task tool.`,
+  }
+  if (reorgDue(state, config.reorgInterval) && config.protocolMode === 'strict') return {
+    id: 'need-research',
+    context,
+    allows: name => name === SEARCH_TOOL || name === INTEGRATE_TOOL || name === 'submit_dag_plan' || name === 'record_dag_review',
+    denial: `Research GAM pages and call ${INTEGRATE_TOOL} in a dedicated response before another task tool.`,
+  }
+  return {
+    id: reorgDue(state, config.reorgInterval) ? 'research-advised' : 'working',
+    context,
+    deniedTools: new Set([MEMORIZE_TOOL, ...reorgDue(state, config.reorgInterval) ? [] : [INTEGRATE_TOOL]]),
+  }
 }
 
 /** Render the compact model surface installed after GAM research integration. */
@@ -307,18 +339,6 @@ export function applyGam(ctx: Context, config: GamConfig): void {
   ctx.tools.register(memorizeTool(ctx))
   ctx.tools.register(searchTool(ctx))
   ctx.tools.register(integrateTool(ctx))
-  ctx.tools.guard((exec) => {
-    if (exec.agent === undefined) return undefined
-    const state = ctx.sessionProjections.stateOf(exec.agent.session, GAM_PROJECTION_KEY)
-    if (state === undefined) return 'GAM projection is unavailable'
-    if (state.pages.some(page => page.abstract === null)) {
-      return managementTool(exec.name) ? undefined : `Call ${MEMORIZE_TOOL} before another task tool.`
-    }
-    if (reorgDue(state, config.reorgInterval)) {
-      return managementTool(exec.name) ? undefined : `Research GAM pages and call ${INTEGRATE_TOOL} before another task tool.`
-    }
-    return undefined
-  })
   ctx.on('agent/pre-step', async ({ agent }, next) => {
     const state = ctx.sessionProjections.stateOf(agent.session, GAM_PROJECTION_KEY)
     if (state === undefined || state.integratedMemory === null || state.integratedAt <= state.foldedAt) return await next()
@@ -339,13 +359,12 @@ export function applyGam(ctx: Context, config: GamConfig): void {
     return await next()
   })
   registerHarnessPrompt(ctx, { id: 'gam', text: GAM_PROMPT })
-  registerHarnessContext(ctx, {
+  installHarnessProtocol(ctx, {
     id: 'gam',
-    text: ({ agent }) => {
-      if (agent === undefined) return ''
+    resolve: (agent) => {
       const state = ctx.sessionProjections.stateOf(agent.session, GAM_PROJECTION_KEY)
       if (state === undefined) throw new Error('GAM projection is unavailable')
-      return renderGamContext(state, config.reorgInterval)
+      return protocolPhase(state, config)
     },
   })
 }

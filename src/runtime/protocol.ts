@@ -5,6 +5,9 @@ import type { PromptAssembly } from '@deepseek-ai/dsh-system-prompt'
 /** Enforcement policy for advisory Harness protocol phases. */
 export type HarnessProtocolMode = 'guided' | 'strict'
 
+/** Stable marker that lets projections exclude protocol denials from task evidence. */
+export const HARNESS_PROTOCOL_DENIAL_PREFIX = '[harness-protocol]'
+
 /** One response-stable Harness phase resolved before the model request. */
 export interface HarnessProtocolPhase {
   /** Stable phase identity used by tests and diagnostics. */
@@ -82,7 +85,8 @@ export function installHarnessProtocol(ctx: Context, protocol: HarnessProtocol):
     if (agent === undefined) return undefined
     const phase = active.get(agent) ?? protocol.resolve(agent)
     if (admits(phase, exec.name)) return undefined
-    return phase.denial ?? `Harness protocol phase "${phase.id}" does not allow ${exec.name}.`
+    const reason = phase.denial ?? `Harness protocol phase "${phase.id}" does not allow ${exec.name}.`
+    return `${HARNESS_PROTOCOL_DENIAL_PREFIX} ${reason}`
   })
 
   return {

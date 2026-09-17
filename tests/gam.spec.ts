@@ -56,6 +56,8 @@ describe('GAM Harness', () => {
     for (let step = 1; step <= 4; step += 1) state = memorizeAll(addPage(state, step, `evidence-${step}`), step)
     expect(state.actionSteps).toBe(4)
     expect(renderGamContext(state, 4)).toContain('GAM research is due')
+    expect(renderGamContext(state, 4, 'guided')).toContain('call gam_integrate_memory soon')
+    expect(renderGamContext(state, 4, 'guided')).not.toContain('before another task action')
 
     const callId = 'integrate-1'
     state = foldGamState(state, event({
@@ -76,6 +78,21 @@ describe('GAM Harness', () => {
       data: { id: 'gam-fold', role: 'user', source: { kind: 'plugin', plugin: 'harness-all-in-dsh:gam' }, content: [{ type: 'text', text: 'checkpoint' }] },
     }))
     expect(state.foldedAt).toBe(4)
+  })
+
+  it('does not turn Harness protocol denials into memory pages or action steps', () => {
+    const callId = 'denied-1'
+    let state = foldGamState(initialGamState(), event({
+      type: 'tool/call', seq: 0, time: 0,
+      data: { turn: 1, step: 1, callId, name: 'bash', arguments: '{}' },
+    }))
+    state = foldGamState(state, event({
+      type: 'tool/result', seq: 1, time: 0,
+      data: { turn: 1, step: 1, message: { content: [{ type: 'tool-result', toolCallId: callId, content: [{ type: 'text', text: 'Error: [harness-protocol] maintenance required' }], isError: true }] } },
+    }))
+    state = foldGamState(state, event({ type: 'step/end', seq: 2, time: 0, data: { turn: 1, step: 1 } }))
+    expect(state.pages).toEqual([])
+    expect(state.actionSteps).toBe(0)
   })
 
   it('configures four-step research and five parallel action slots', () => {
