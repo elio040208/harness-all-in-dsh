@@ -5,6 +5,7 @@ import type { ToolDefinition, ToolExecution } from '@deepseek-ai/dsh-tools'
 import { auxiliaryText } from '../runtime/auxiliary-llm.js'
 import { contentText } from '../runtime/content.js'
 import { registerHarnessPrompt } from '../runtime/prompt.js'
+import { installHarnessProtocol } from '../runtime/protocol.js'
 import { runIsolatedAgent } from '../runtime/subagent-ensemble.js'
 import { trajectorySolutions, truncateWords } from '../runtime/trajectory.js'
 import type { AgentTrajectory } from '../runtime/trajectory.js'
@@ -178,11 +179,6 @@ export function applyOAgent(ctx: Context, config: OAgentConfig): void {
   const completed = new WeakSet<Agent>()
   const reminders = new WeakMap<Agent, number>()
   ctx.tools.register(runTool(ctx, config, completed))
-  ctx.tools.guard(exec => {
-    const agent = exec.agent
-    if (agent === undefined || agent.session.header.parentSession !== undefined) return undefined
-    return exec.name === RUN_TOOL ? undefined : `OAgent coordinator must call ${RUN_TOOL}; ordinary task tools belong to its experts.`
-  })
   ctx.on('agent/turn-stopping', ({ agent }) => {
     if (agent.session.header.parentSession !== undefined || completed.has(agent)) return
     const count = reminders.get(agent) ?? 0
@@ -198,5 +194,14 @@ export function applyOAgent(ctx: Context, config: OAgentConfig): void {
     text: ({ agent }) => agent?.session.header.parentSession === undefined
       ? `Operate only as the OAgent coordinator. Immediately call ${RUN_TOOL} with an empty object. Do not solve the task yourself and do not call ordinary task tools; the composite tool runs one Plan-and-Execute expert, two ReAct experts, and the critic, then concludes the turn.`
       : '',
+  })
+  installHarnessProtocol(ctx, {
+    id: 'oagent',
+    resolve: agent => agent.session.header.parentSession !== undefined
+      ? { id: 'expert', context: '' }
+      : {
+          id: 'coordinate', context: '', allowedTools: new Set([RUN_TOOL]),
+          denial: `OAgent coordinator must call ${RUN_TOOL}; ordinary task tools belong to its experts.`,
+        },
   })
 }
