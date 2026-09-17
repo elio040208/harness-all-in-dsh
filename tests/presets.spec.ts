@@ -5,7 +5,6 @@ import { HARNESS_CATALOG } from '../src/catalog.js'
 
 const root = join(import.meta.dirname, '..')
 const presetRoot = join(root, 'presets')
-const cadenceHarnesses = new Set(['plan-and-execute', 'flash-searcher', 'gam'])
 
 function read(path: string): string {
   return readFileSync(join(root, path), 'utf8')
@@ -28,7 +27,7 @@ describe('Web Agent presets', () => {
       expect(composition).toContain('path: ../_shared/agent-tools.cordis.yml')
       expect(composition).toContain('name: harness-all-in-dsh')
       expect(composition).toContain(`harness: ${entry.id}`)
-      if (cadenceHarnesses.has(entry.id)) expect(composition).toContain('protocolMode: guided')
+      expect(composition).not.toContain('protocolMode:')
       expect(metadata).toMatch(/^name: Harness · /m)
       expect(metadata).toMatch(/^description: \S/m)
       expect(metadata).toMatch(/^order: 1\d\d$/m)
@@ -52,7 +51,7 @@ describe('Web Agent presets', () => {
       expect(overlay).toContain('name: harness-all-in-dsh')
       expect(overlay).toContain(`harness: ${entry.id}`)
       expect(overlay).toContain('maxParallelToolCalls:')
-      if (cadenceHarnesses.has(entry.id)) expect(overlay).toContain('protocolMode: strict')
+      expect(overlay).not.toContain('protocolMode:')
     }
   })
 })

@@ -1,5 +1,6 @@
 import type { SessionEvent } from '@deepseek-ai/dsh-session'
 import { contentText } from './content.js'
+import { isHarnessProtocolDenialResult } from './protocol.js'
 
 /** One external action and its observed result. */
 export interface ToolEpisodeAction {
@@ -60,6 +61,11 @@ export function foldToolEpisodes<T extends ToolEpisodeCollection>(
   if (event.type === 'tool/result') {
     const callId = String(event.data.message.content[0].toolCallId)
     if (state.calls[callId] === undefined) return state
+    if (isHarnessProtocolDenialResult(event)) {
+      const calls = { ...state.calls }
+      delete calls[callId]
+      return { ...state, calls }
+    }
     const block = event.data.message.content[0]
     return { ...state, results: { ...state.results, [callId]: {
       result: contentText(block.content), isError: block.isError === true, seq: Number(event.seq),
@@ -67,7 +73,11 @@ export function foldToolEpisodes<T extends ToolEpisodeCollection>(
   }
   if (event.type !== 'step/end') return state
   const stepCalls = Object.entries(state.calls).filter(([callId, call]) => call.step === event.data.step && state.results[callId] !== undefined)
-  if (stepCalls.length === 0) return state
+  if (stepCalls.length === 0) {
+    const assistants = { ...state.assistants }
+    delete assistants[String(event.data.step)]
+    return { ...state, assistants }
+  }
   const assistant = state.assistants[String(event.data.step)]
   const interaction: ToolEpisode = {
     id: state.interactions.length,

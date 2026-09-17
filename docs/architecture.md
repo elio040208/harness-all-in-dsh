@@ -42,7 +42,7 @@ Anything that changes a later model request must be reproducible from Session da
 
 Dynamic context providers derive their text from replayable projection state. DSH logs a new user-role runtime-context snapshot only when that text changes, while the system prompt remains stable across execution-state transitions.
 
-Protocol phases are response-atomic. State produced by one tool call becomes eligible to change admission only at the next prompt assembly, so exclusive barriers and bounded parallel scheduling cannot reject sibling calls that were generated from the same request. Structural phases are always enforced. Periodic maintenance is advisory in `guided` mode and enforced in `strict` mode.
+Protocol phases are response-atomic. State produced by one tool call becomes eligible to change admission only at the next prompt assembly, so exclusive barriers and bounded parallel scheduling cannot reject sibling calls that were generated from the same request. Phase changes never filter the model-facing tool catalogue. Planning, review, and memory-maintenance cadence is advisory; coordinator role separation and invalid Harness-management operations remain enforced. Protocol denials stay replayable in the Session log but projections exclude them from task evidence, memory, trajectories, and progress counts.
 
 Surface replacement changes what the model sees; it never deletes the underlying Session events. Replay reconstructs the same working state without rerunning prior model calls.
 

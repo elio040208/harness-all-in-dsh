@@ -38,7 +38,7 @@ describe('Flash-Searcher Harness', () => {
 
   it('persists an accepted DAG and renders dependency-aware execution state', () => {
     let state = initialFlashSearcherState()
-    expect(renderFlashSearcherContext(state, 8)).toContain('call submit_dag_plan')
+    expect(renderFlashSearcherContext(state, 8)).toContain('Call submit_dag_plan early')
     state = foldFlashSearcherState(state, event({
       type: 'tool/call', seq: 0, time: 0,
       data: { turn: 1, step: 1, callId: 'plan-1', name: 'submit_dag_plan', arguments: JSON.stringify({ goals }) },
@@ -57,9 +57,8 @@ describe('Flash-Searcher Harness', () => {
     for (let step = 1; step <= 8; step += 1) {
       state = foldFlashSearcherState(state, event({ type: 'step/end', seq: step, time: 0, data: { turn: 1, step } }))
     }
-    expect(renderFlashSearcherContext(state, 8)).toContain('call record_dag_review')
-    expect(renderFlashSearcherContext(state, 8, 'guided')).toContain('Call record_dag_review soon')
-    expect(renderFlashSearcherContext(state, 8, 'guided')).not.toContain('Before another task action')
+    expect(renderFlashSearcherContext(state, 8)).toContain('Call record_dag_review soon')
+    expect(renderFlashSearcherContext(state, 8)).not.toContain('Before another task action')
 
     const review = [
       { goalId: 'facts', status: 'completed', activePath: 1, result: 'Primary facts collected.', nextAction: 'No action.' },
@@ -74,7 +73,7 @@ describe('Flash-Searcher Harness', () => {
       data: { turn: 1, step: 9, message: { content: [{ type: 'tool-result', toolCallId: 'review-1', content: [], isError: false }] } },
     }))
     expect(renderFlashSearcherContext(state, 8)).toContain('Ready goals: verify')
-    expect(renderFlashSearcherContext(state, 8)).not.toContain('call record_dag_review')
+    expect(renderFlashSearcherContext(state, 8)).not.toContain('Call record_dag_review')
   })
 
   it('enables five DSH-native parallel tool slots in its profile', () => {
@@ -84,5 +83,20 @@ describe('Flash-Searcher Harness', () => {
     )
     expect(profile).toContain('harness: flash-searcher')
     expect(profile).toContain('maxParallelToolCalls: 5')
+  })
+
+  it('does not count a protocol denial as an action step', () => {
+    let state: FlashSearcherState = { ...initialFlashSearcherState(), goals }
+    state = foldFlashSearcherState(state, event({
+      type: 'tool/call', seq: 0, time: 0,
+      data: { turn: 1, step: 1, callId: 'denied', name: 'submit_dag_plan', arguments: JSON.stringify({ goals }) },
+    }))
+    state = foldFlashSearcherState(state, event({
+      type: 'tool/result', seq: 1, time: 0,
+      data: { turn: 1, step: 1, message: { content: [{ type: 'tool-result', toolCallId: 'denied', content: [{ type: 'text', text: 'Error: [harness-protocol] invalid management call' }], isError: true }] } },
+    }))
+    state = foldFlashSearcherState(state, event({ type: 'step/end', seq: 2, time: 0, data: { turn: 1, step: 1 } }))
+    expect(state.actionSteps).toBe(0)
+    expect(state.pendingPlan).toBeNull()
   })
 })

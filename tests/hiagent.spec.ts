@@ -42,6 +42,23 @@ describe('HiAgent Harness', () => {
     expect(state.interactions[0]).toMatchObject({ id: 0, explanation: 'Inspect it.', actions: [{ result: 'FACT' }], relatedSeqs: [2, 3, 4] })
   })
 
+  it('does not turn protocol denials into trajectory interactions', () => {
+    let state = initialHiAgentState()
+    state = foldHiAgentState(state, event({
+      type: 'assistant/message', seq: 1, time: 0,
+      data: { turn: 1, step: 1, message: { content: [{ type: 'text', text: 'Try it.' }] } },
+    }))
+    state = foldHiAgentState(state, event({ type: 'tool/call', seq: 2, time: 0, data: { turn: 1, step: 1, callId: 'denied', name: 'bash', arguments: '{}' } }))
+    state = foldHiAgentState(state, event({
+      type: 'tool/result', seq: 3, time: 0,
+      data: { turn: 1, step: 1, message: { content: [{ type: 'tool-result', toolCallId: 'denied', content: [{ type: 'text', text: 'Error: [harness-protocol] coordinator only' }], isError: true }] } },
+    }))
+    state = foldHiAgentState(state, event({ type: 'step/end', seq: 4, time: 0, data: { turn: 1, step: 1 } }))
+    expect(state.interactions).toEqual([])
+    expect(state.calls).toEqual({})
+    expect(state.assistants).toEqual({})
+  })
+
   it('uses TF-IDF novelty and always retains trajectory boundaries', () => {
     expect(hiAgentSimilarity('alpha beta', 'alpha beta')).toBeCloseTo(1)
     expect(hiAgentSimilarity('alpha beta', 'gamma delta')).toBe(0)

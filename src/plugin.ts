@@ -13,7 +13,6 @@ import { applyPlanAndExecute } from './harnesses/plan-and-execute.js'
 import { applyReact } from './harnesses/react.js'
 import { applyReSum } from './harnesses/resum.js'
 import { applyRoma } from './harnesses/roma.js'
-import type { HarnessProtocolMode } from './runtime/protocol.js'
 
 /** Cordis loader name for the fixed-harness selector plugin. */
 export const name = 'harness-all-in-dsh'
@@ -43,7 +42,6 @@ export interface Config {
   readonly aorchestraModels?: string
   readonly aorchestraModelProvider?: string
   readonly aorchestraMaxDelegations?: number
-  readonly protocolMode?: HarnessProtocolMode
 }
 
 /** Load-time validation for the implemented Harness set. */
@@ -68,7 +66,6 @@ export const Config: z<Config> = z.object({
   aorchestraModels: z.string().default('deepseek-v4.1-flash'),
   aorchestraModelProvider: z.string().default(''),
   aorchestraMaxDelegations: z.number().default(5),
-  protocolMode: z.union(['guided', 'strict'] as const).default('guided'),
 })
 
 /**
@@ -83,16 +80,16 @@ export function apply(ctx: Context, config: Config): void {
       applyReact(ctx)
       return
     case 'plan-and-execute':
-      applyPlanAndExecute(ctx, { summaryInterval: config.summaryInterval ?? 8, protocolMode: config.protocolMode ?? 'guided' })
+      applyPlanAndExecute(ctx, { summaryInterval: config.summaryInterval ?? 8 })
       return
     case 'resum':
       applyReSum(ctx)
       return
     case 'flash-searcher':
-      applyFlashSearcher(ctx, { summaryInterval: config.summaryInterval ?? 8, protocolMode: config.protocolMode ?? 'guided' })
+      applyFlashSearcher(ctx, { summaryInterval: config.summaryInterval ?? 8 })
       return
     case 'gam':
-      applyGam(ctx, { summaryInterval: config.summaryInterval ?? 8, reorgInterval: config.reorgInterval ?? 4, protocolMode: config.protocolMode ?? 'guided' })
+      applyGam(ctx, { summaryInterval: config.summaryInterval ?? 8, reorgInterval: config.reorgInterval ?? 4 })
       return
     case 'memobrain':
       ctx.inject(['llm', 'tokenMeter'], (ready) => {

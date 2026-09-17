@@ -46,7 +46,7 @@ describe('Harness response protocol', () => {
       })
 
       const assembly = await ctx.systemPrompt.assemble(assembleContextFor(agent))
-      expect(assembly.tools.map(tool => tool.name)).toEqual(['task_one', 'task_two'])
+      expect(assembly.tools.map(tool => tool.name)).toEqual(['maintain', 'task_one', 'task_two'])
       expect(renderContextSnapshot(assembly)).toContain('Work phase.')
       await agentEvents(ctx, agent).waterfall('agent/pre-step', {
         messages: [], turn: 1, step: 1, signal,
@@ -59,7 +59,7 @@ describe('Harness response protocol', () => {
       expect(await execute(ctx, agent, 'maintain')).toBe('Error: [harness-protocol] Task phase only.')
 
       const nextAssembly = await ctx.systemPrompt.assemble(assembleContextFor(agent))
-      expect(nextAssembly.tools.map(tool => tool.name)).toEqual(['maintain'])
+      expect(nextAssembly.tools.map(tool => tool.name)).toEqual(['maintain', 'task_one', 'task_two'])
       expect(renderContextSnapshot(nextAssembly)).toContain('Maintenance phase.')
       await agentEvents(ctx, agent).waterfall('agent/pre-step', {
         messages: [], turn: 1, step: 2, signal,

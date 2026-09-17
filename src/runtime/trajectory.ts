@@ -1,5 +1,6 @@
 import type { SessionEvent } from '@deepseek-ai/dsh-session'
 import { contentText } from './content.js'
+import { isHarnessProtocolDenialResult } from './protocol.js'
 
 /** One searchable message or tool interaction in an isolated Agent trajectory. */
 export interface TrajectoryStep {
@@ -38,7 +39,7 @@ export function trajectoryFromEvents(
   events: readonly SessionEvent[],
 ): AgentTrajectory {
   const steps: MutableStep[] = []
-  const pendingTools = new Map<string, string>()
+  const pendingTools = new Map<string, { readonly name: string; readonly call: { readonly name: string; readonly arguments: string }; readonly step: number }>()
   for (const event of events) {
     switch (event.type) {
       case 'system/message':
@@ -51,9 +52,9 @@ export function trajectoryFromEvents(
         steps.push({ role: 'assistant', content: contentText(event.data.message.content), agentStep: event.data.step })
         break
       case 'tool/call': {
-        pendingTools.set(String(event.data.callId), event.data.name)
         const assistant = steps.findLast(step => step.role === 'assistant' && step.agentStep === event.data.step)
         const call = { name: event.data.name, arguments: event.data.arguments }
+        pendingTools.set(String(event.data.callId), { name: event.data.name, call, step: event.data.step })
         if (assistant === undefined) steps.push({ role: 'assistant', content: '', toolCalls: [call], agentStep: event.data.step })
         else assistant.toolCalls = [...(assistant.toolCalls ?? []), call]
         break
@@ -61,13 +62,26 @@ export function trajectoryFromEvents(
       case 'tool/result': {
         const block = event.data.message.content[0]
         const callId = String(block.toolCallId)
-        const toolName = pendingTools.get(callId)
+        const pending = pendingTools.get(callId)
+        if (isHarnessProtocolDenialResult(event)) {
+          const assistantIndex = steps.findLastIndex(step => step.role === 'assistant' && step.agentStep === pending?.step)
+          const assistant = steps[assistantIndex]
+          if (assistant?.toolCalls !== undefined) {
+            const remaining = assistant.toolCalls.filter(call => call !== pending?.call)
+            if (remaining.length === 0) delete assistant.toolCalls
+            else assistant.toolCalls = remaining
+          }
+          if (assistant?.content.length === 0 && assistant.toolCalls === undefined) steps.splice(assistantIndex, 1)
+          pendingTools.delete(callId)
+          break
+        }
         steps.push({
           role: 'tool',
           content: contentText(block.content),
-          ...(toolName === undefined ? {} : { toolName }),
+          ...(pending === undefined ? {} : { toolName: pending.name }),
           agentStep: event.data.step,
         })
+        pendingTools.delete(callId)
         break
       }
       default:

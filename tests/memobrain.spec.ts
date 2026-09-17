@@ -60,6 +60,20 @@ describe('MemoBrain Harness', () => {
     expect(state.nodes[1]).toMatchObject({ id: 2, kind: 'evidence', relatedSeqs: [2, 3, 4] })
   })
 
+  it('does not enqueue protocol denials for memorization', () => {
+    let state = taskState()
+    state = foldMemoBrainState(state, event({
+      type: 'tool/call', seq: 2, time: 0,
+      data: { turn: 1, step: 1, callId: 'denied', name: 'bash', arguments: '{}' },
+    }))
+    state = foldMemoBrainState(state, event({
+      type: 'tool/result', seq: 3, time: 0,
+      data: { turn: 1, step: 1, message: { content: [{ type: 'tool-result', toolCallId: 'denied', content: [{ type: 'text', text: 'Error: [harness-protocol] coordinator only' }], isError: true }] } },
+    }))
+    expect(state.pendingCalls).toEqual({})
+    expect(state.pendingEpisodes).toEqual([])
+  })
+
   it('validates dependency patches and rejects graph cycles', () => {
     const state = taskState()
     const graph = applyMemoGraphPatch(state, {

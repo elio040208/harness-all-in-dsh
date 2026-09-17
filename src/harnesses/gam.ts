@@ -8,8 +8,8 @@ import { z } from 'zod'
 import { applyFlashSearcher } from './flash-searcher.js'
 import { contentText } from '../runtime/content.js'
 import { registerHarnessPrompt } from '../runtime/prompt.js'
-import { HARNESS_PROTOCOL_DENIAL_PREFIX, installHarnessProtocol } from '../runtime/protocol.js'
-import type { HarnessProtocolMode, HarnessProtocolPhase } from '../runtime/protocol.js'
+import { installHarnessProtocol, isHarnessProtocolDenialResult } from '../runtime/protocol.js'
+import type { HarnessProtocolPhase } from '../runtime/protocol.js'
 
 const MEMORIZE_TOOL = 'gam_memorize_pages'
 const SEARCH_TOOL = 'gam_search_pages'
@@ -160,7 +160,7 @@ export function foldGamState(state: GamState, event: SessionEvent): GamState {
     delete nextPending[id]
     const block = event.data.message.content[0]
     const resultText = contentText(block.content)
-    if (block.isError === true && resultText.startsWith(`Error: ${HARNESS_PROTOCOL_DENIAL_PREFIX}`)) {
+    if (isHarnessProtocolDenialResult(event)) {
       return { ...state, pendingCalls: nextPending }
     }
     return {
@@ -277,7 +277,6 @@ function integrateTool(ctx: Context): ToolDefinition {
 export interface GamConfig {
   readonly summaryInterval: number
   readonly reorgInterval: number
-  readonly protocolMode: HarnessProtocolMode
 }
 
 function reorgDue(state: GamState, interval: number): boolean {
@@ -290,34 +289,25 @@ const GAM_PROMPT = 'Use General Agentic Memory (GAM). Complete tool observations
 export function renderGamContext(
   state: GamState,
   interval: number,
-  mode: HarnessProtocolMode = 'strict',
 ): string {
   const missing = state.pages.filter(page => page.abstract === null)
   const catalog = state.pages.map(page => `${page.id}: ${page.abstract ?? '(abstract pending)'}`).join('\n') || '(empty)'
   const integrated = state.integratedMemory ?? '(none yet)'
   const directive = missing.length > 0
-    ? `Before another task tool, call ${MEMORIZE_TOOL} with one self-contained factual abstract for each pending page: ${missing.map(page => page.id).join(', ')}.`
+    ? `Memory abstracts are pending. Call ${MEMORIZE_TOOL} soon with one self-contained factual abstract for each pending page: ${missing.map(page => page.id).join(', ')}.`
     : reorgDue(state, interval)
-      ? mode === 'strict'
-        ? `GAM research is due. Use ${SEARCH_TOOL} one or more times over the abstract catalogue, then call ${INTEGRATE_TOOL} with a consolidated factual memory and the supporting page ids before another task action.`
-        : `GAM research is due. Use ${SEARCH_TOOL} over the abstract catalogue and call ${INTEGRATE_TOOL} soon with a consolidated factual memory and the supporting page ids.`
-      : 'Continue the DAG-guided task. Search the page store whenever older exact evidence is needed.'
+      ? `GAM research is due. Use ${SEARCH_TOOL} over the abstract catalogue and call ${INTEGRATE_TOOL} soon with a consolidated factual memory and the supporting page ids.`
+      : 'Continue the DAG-directed task. Search the page store whenever older exact evidence is needed.'
   return `GAM state.\n\n${directive}\n\nIntegrated memory:\n${integrated}\n\nMemory catalogue:\n${catalog}`
 }
 
 function protocolPhase(state: GamState, config: GamConfig): HarnessProtocolPhase {
-  const context = renderGamContext(state, config.reorgInterval, config.protocolMode)
+  const context = renderGamContext(state, config.reorgInterval)
   if (state.pages.some(page => page.abstract === null)) return {
     id: 'need-memorization',
     context,
-    allows: name => name === MEMORIZE_TOOL || name === 'submit_dag_plan' || name === 'record_dag_review',
-    denial: `Call ${MEMORIZE_TOOL} in a dedicated response before another task tool.`,
-  }
-  if (reorgDue(state, config.reorgInterval) && config.protocolMode === 'strict') return {
-    id: 'need-research',
-    context,
-    allows: name => name === SEARCH_TOOL || name === INTEGRATE_TOOL || name === 'submit_dag_plan' || name === 'record_dag_review',
-    denial: `Research GAM pages and call ${INTEGRATE_TOOL} in a dedicated response before another task tool.`,
+    deniedTools: new Set([INTEGRATE_TOOL]),
+    denial: `${INTEGRATE_TOOL} requires abstracts for every pending page.`,
   }
   return {
     id: reorgDue(state, config.reorgInterval) ? 'research-advised' : 'working',
@@ -334,7 +324,7 @@ export function renderGamCheckpoint(state: GamState): string {
 /** Install Flash planning plus GAM Memorizer, Researcher tools, and surface folding. */
 export function applyGam(ctx: Context, config: GamConfig): void {
   if (!Number.isSafeInteger(config.reorgInterval) || config.reorgInterval < 1) throw new Error('gam reorgInterval must be a positive safe integer')
-  applyFlashSearcher(ctx, { summaryInterval: config.summaryInterval, protocolMode: config.protocolMode })
+  applyFlashSearcher(ctx, { summaryInterval: config.summaryInterval })
   ctx.sessionProjections.register(gamProjectionDefinition)
   ctx.tools.register(memorizeTool(ctx))
   ctx.tools.register(searchTool(ctx))

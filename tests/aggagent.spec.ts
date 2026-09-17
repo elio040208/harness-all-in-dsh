@@ -31,6 +31,15 @@ describe('AggAgent Harness', () => {
     expect(trajectorySolutions([trajectory])).toEqual([{ trajectoryId: 1, content: 'The answer is 42.' }])
   })
 
+  it('keeps protocol denials out of aggregated trajectories', () => {
+    const denied = trajectoryFromEvents(2, 'child-2', 'completed', [
+      event({ type: 'assistant/message', seq: 1, time: 0, data: { step: 1, message: { content: [] } } }),
+      event({ type: 'tool/call', seq: 2, time: 0, data: { step: 1, callId: 'denied', name: 'bash', arguments: '{}' } }),
+      event({ type: 'tool/result', seq: 3, time: 0, data: { step: 1, message: { content: [{ toolCallId: 'denied', content: [{ type: 'text', text: 'Error: [harness-protocol] coordinator only' }], isError: true }] } } }),
+    ])
+    expect(denied.steps).toEqual([])
+  })
+
   it('implements ROUGE-L recall and clamps segments to five steps', () => {
     expect(rougeLRecall('alpha 42', 'Observed alpha equals 42')).toBe(1)
     expect(trajectorySegment({ ...trajectory, steps: Array.from({ length: 8 }, (_, index) => ({ role: 'assistant' as const, content: `step ${index + 1}` })) }, 2, 8))

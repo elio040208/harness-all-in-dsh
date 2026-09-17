@@ -42,7 +42,7 @@ AggAgent、OAgent、ROMA 和 AOrchestra 拥有一个有界协调动作。它们�
 
 动态 context provider 从可回放的 projection state 派生文本。DSH 只在文本变化时记录新的 user-role runtime-context snapshot，而 system prompt 在执行状态转换期间保持稳定。
 
-Protocol phase 以模型响应为原子单位。一个工具调用产生的状态只能在下一次 prompt assembly 时改变准入规则，因此 exclusive barrier 和有界并行调度不会拒绝同一请求生成的后续调用。结构阶段始终强制执行；周期维护在 `guided` 模式下只提醒，在 `strict` 模式下强制执行。
+Protocol phase 以模型响应为原子单位。一个工具调用产生的状态只能在下一次 prompt assembly 时改变准入规则，因此 exclusive barrier 和有界并行调度不会拒绝同一请求生成的后续调用。阶段变化不会过滤模型看到的工具目录。规划、复查和记忆维护节奏仅作提示；协调器职责隔离和无效的 Harness 管理操作仍会强制执行。协议拒绝会保留在可回放的 Session 日志中，但 projection 会将其排除在任务证据、记忆、轨迹和进度计数之外。
 
 Surface replacement 只改变模型看到的内容，不会删除底层 Session 事件。回放可以重建相同工作状态，而不重新运行之前的模型调用。
 

@@ -1,9 +1,7 @@
 import type { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
-import type { PromptAssembly } from '@deepseek-ai/dsh-system-prompt'
-
-/** Enforcement policy for advisory Harness protocol phases. */
-export type HarnessProtocolMode = 'guided' | 'strict'
+import type { SessionEvent } from '@deepseek-ai/dsh-session'
+import { contentText } from './content.js'
 
 /** Stable marker that lets projections exclude protocol denials from task evidence. */
 export const HARNESS_PROTOCOL_DENIAL_PREFIX = '[harness-protocol]'
@@ -14,13 +12,13 @@ export interface HarnessProtocolPhase {
   readonly id: string
   /** Replayable state and current instructions shown to the model. */
   readonly context: string
-  /** Tool names admitted during this response; omission admits every visible tool. */
+  /** Tool names admitted during this response; omission admits every registered tool. */
   readonly allowedTools?: ReadonlySet<string>
-  /** Tool names hidden and denied while every other visible tool remains admitted. */
+  /** Tool names denied while every other registered tool remains admitted. */
   readonly deniedTools?: ReadonlySet<string>
   /** Harness-specific admission rule for compositional tool families. */
   readonly allows?: (tool: string) => boolean
-  /** Explanation returned only when the model calls a tool hidden by this phase. */
+  /** Explanation returned only when the model calls a tool denied by this phase. */
   readonly denial?: string
 }
 
@@ -36,24 +34,27 @@ export interface HarnessProtocolHandle {
   active(agent: Agent): HarnessProtocolPhase | undefined
 }
 
-function filterTools(assembly: PromptAssembly, phase: HarnessProtocolPhase): PromptAssembly {
-  if (phase.allowedTools === undefined && phase.deniedTools === undefined && phase.allows === undefined) return assembly
-  return { ...assembly, tools: assembly.tools.filter(tool => admits(phase, tool.name)) }
-}
-
 function admits(phase: HarnessProtocolPhase, tool: string): boolean {
   return (phase.allowedTools === undefined || phase.allowedTools.has(tool))
     && phase.deniedTools?.has(tool) !== true
     && (phase.allows === undefined || phase.allows(tool))
 }
 
+/** Return whether a tool result records a Harness admission rejection rather than task evidence. */
+export function isHarnessProtocolDenialResult(event: SessionEvent): boolean {
+  if (event.type !== 'tool/result') return false
+  const block = event.data.message.content[0]
+  return block.isError === true
+    && contentText(block.content).startsWith(`Error: ${HARNESS_PROTOCOL_DENIAL_PREFIX}`)
+}
+
 /**
  * Install one response-atomic Harness protocol.
  *
- * Prompt assembly resolves the phase, contributes its runtime context, and
- * hides tools the phase cannot admit. `agent/pre-step` then seals that exact
- * phase for the complete model response, so tool results cannot change the
- * admission decision for later calls from the same response.
+ * Prompt assembly resolves the phase and contributes its runtime context
+ * without changing the model-facing tool catalogue. `agent/pre-step` then
+ * seals that exact phase for the complete model response, so tool results
+ * cannot change the admission decision for later calls from the same response.
  *
  * @param ctx - Harness plugin context.
  * @param protocol - Harness-owned phase resolver.
@@ -72,7 +73,7 @@ export function installHarnessProtocol(ctx: Context, protocol: HarnessProtocol):
     candidates.set(agent, phase)
     const contexts = resolved.contexts.filter(context => context.name !== contextName)
     if (phase.context.length > 0) contexts.push({ name: contextName, text: phase.context })
-    return filterTools({ ...resolved, contexts }, phase)
+    return { ...resolved, contexts }
   })
 
   ctx.on('agent/pre-step', async ({ agent }, next) => {

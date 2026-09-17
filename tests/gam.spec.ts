@@ -44,7 +44,7 @@ describe('GAM Harness', () => {
     state = addPage(state, 1, 'ALPHA evidence')
     expect(state.originalTask).toBe('Investigate the task.')
     expect(state.pages[0]).toMatchObject({ id: 'page-0', content: 'ALPHA evidence', abstract: null })
-    expect(renderGamContext(state, 4)).toContain('call gam_memorize_pages')
+    expect(renderGamContext(state, 4)).toContain('Call gam_memorize_pages soon')
 
     state = memorizeAll(state, 1)
     expect(state.pages[0]?.abstract).toBe('Abstract for ALPHA evidence')
@@ -56,8 +56,8 @@ describe('GAM Harness', () => {
     for (let step = 1; step <= 4; step += 1) state = memorizeAll(addPage(state, step, `evidence-${step}`), step)
     expect(state.actionSteps).toBe(4)
     expect(renderGamContext(state, 4)).toContain('GAM research is due')
-    expect(renderGamContext(state, 4, 'guided')).toContain('call gam_integrate_memory soon')
-    expect(renderGamContext(state, 4, 'guided')).not.toContain('before another task action')
+    expect(renderGamContext(state, 4)).toContain('call gam_integrate_memory soon')
+    expect(renderGamContext(state, 4)).not.toContain('before another task action')
 
     const callId = 'integrate-1'
     state = foldGamState(state, event({

@@ -6,7 +6,8 @@ import type { ToolDefinition, ToolExecution } from '@deepseek-ai/dsh-tools'
 import { z } from 'zod'
 import { registerHarnessPrompt } from '../runtime/prompt.js'
 import { installHarnessProtocol } from '../runtime/protocol.js'
-import type { HarnessProtocolMode, HarnessProtocolPhase } from '../runtime/protocol.js'
+import { isHarnessProtocolDenialResult } from '../runtime/protocol.js'
+import type { HarnessProtocolPhase } from '../runtime/protocol.js'
 
 const SUBMIT_PLAN_TOOL = 'submit_plan'
 const RECORD_PROGRESS_TOOL = 'record_progress'
@@ -106,6 +107,12 @@ export function foldLinearPlanState(state: LinearPlanState, event: SessionEvent)
   }
   if (event.type === 'tool/result') {
     const callId = resultCallId(event)
+    if (isHarnessProtocolDenialResult(event)) return {
+      ...state,
+      managementStep: event.data.step,
+      pendingPlan: state.pendingPlan?.callId === callId ? null : state.pendingPlan,
+      pendingSummary: state.pendingSummary?.callId === callId ? null : state.pendingSummary,
+    }
     const isError = event.data.message.content[0].isError
     if (state.pendingPlan?.callId === callId) {
       return {
@@ -143,7 +150,6 @@ export const linearPlanProjectionDefinition = {
 /** Tunable periodic summary cadence from the reference implementation. */
 export interface PlanAndExecuteConfig {
   readonly summaryInterval: number
-  readonly protocolMode: HarnessProtocolMode
 }
 
 function summaryDue(state: LinearPlanState, interval: number): boolean {
@@ -159,17 +165,14 @@ const PLAN_AND_EXECUTE_PROMPT = 'Operate as a Plan-and-Execute agent. Follow the
 export function renderPlanAndExecuteContext(
   state: LinearPlanState,
   interval: number,
-  mode: HarnessProtocolMode = 'strict',
 ): string {
   if (state.plan === null) {
-    return `Plan-and-Execute state: no roadmap has been accepted. Before using any task tool, call ${SUBMIT_PLAN_TOOL} exactly once with a 3-7 step ordered roadmap. Each step must be specific and actionable, later steps must build on earlier results, and a verification step must appear near the end.`
+    return `Plan-and-Execute state: no roadmap has been accepted. Call ${SUBMIT_PLAN_TOOL} early with a 3-7 step ordered roadmap. You may first use task tools to inspect the workspace or gather facts needed to make the roadmap concrete. Each step must be specific and actionable, later steps must build on earlier results, and a verification step must appear near the end.`
   }
   const plan = state.plan.map((step, index) => `${index + 1}. ${step}`).join('\n')
   const summary = state.latestSummary === null ? '' : `\n\nLatest progress summary:\n${state.latestSummary}`
   const periodic = summaryDue(state, interval)
-    ? mode === 'strict'
-      ? `\n\nBefore taking another task action, call ${RECORD_PROGRESS_TOOL} with a concise account of completed roadmap steps, unresolved steps, and the best next action.`
-      : `\n\nA progress review is due. Call ${RECORD_PROGRESS_TOOL} soon with a concise account of completed roadmap steps, unresolved steps, and the best next action.`
+    ? `\n\nA progress review is due. Call ${RECORD_PROGRESS_TOOL} soon with a concise account of completed roadmap steps, unresolved steps, and the best next action.`
     : ''
   return `Plan-and-Execute state.\n\nRoadmap:\n${plan}${summary}${periodic}`
 }
@@ -177,20 +180,18 @@ export function renderPlanAndExecuteContext(
 function protocolPhase(state: LinearPlanState, config: PlanAndExecuteConfig): HarnessProtocolPhase {
   if (state.plan === null) return {
     id: 'need-plan',
-    context: renderPlanAndExecuteContext(state, config.summaryInterval, config.protocolMode),
-    allowedTools: new Set([SUBMIT_PLAN_TOOL]),
-    denial: `Call ${SUBMIT_PLAN_TOOL} in a dedicated response before task tools.`,
+    context: renderPlanAndExecuteContext(state, config.summaryInterval),
+    deniedTools: new Set([RECORD_PROGRESS_TOOL]),
+    denial: `${RECORD_PROGRESS_TOOL} requires an accepted roadmap.`,
   }
   if (summaryDue(state, config.summaryInterval)) return {
     id: 'need-progress-review',
-    context: renderPlanAndExecuteContext(state, config.summaryInterval, config.protocolMode),
-    ...config.protocolMode === 'strict'
-      ? { allowedTools: new Set([RECORD_PROGRESS_TOOL]), denial: `Call ${RECORD_PROGRESS_TOOL} in a dedicated response before the next task action.` }
-      : { deniedTools: new Set([SUBMIT_PLAN_TOOL]) },
+    context: renderPlanAndExecuteContext(state, config.summaryInterval),
+    deniedTools: new Set([SUBMIT_PLAN_TOOL]),
   }
   return {
     id: 'working',
-    context: renderPlanAndExecuteContext(state, config.summaryInterval, config.protocolMode),
+    context: renderPlanAndExecuteContext(state, config.summaryInterval),
     deniedTools: new Set([SUBMIT_PLAN_TOOL, RECORD_PROGRESS_TOOL]),
   }
 }

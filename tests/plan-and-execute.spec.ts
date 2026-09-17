@@ -14,7 +14,7 @@ function event(value: object): SessionEvent {
 describe('Plan-and-Execute Harness', () => {
   it('requires and then replays the accepted linear roadmap', () => {
     let state = initialLinearPlanState()
-    expect(renderPlanAndExecuteContext(state, 8)).toContain('call submit_plan')
+    expect(renderPlanAndExecuteContext(state, 8)).toContain('Call submit_plan early')
 
     state = foldLinearPlanState(state, event({
       type: 'tool/call', seq: 0, time: 0,
@@ -35,9 +35,8 @@ describe('Plan-and-Execute Harness', () => {
       state = foldLinearPlanState(state, event({ type: 'step/end', seq: step, time: 0, data: { turn: 1, step } }))
     }
     expect(state.actionSteps).toBe(8)
-    expect(renderPlanAndExecuteContext(state, 8)).toContain('call record_progress')
-    expect(renderPlanAndExecuteContext(state, 8, 'guided')).toContain('Call record_progress soon')
-    expect(renderPlanAndExecuteContext(state, 8, 'guided')).not.toContain('Before taking another task action')
+    expect(renderPlanAndExecuteContext(state, 8)).toContain('Call record_progress soon')
+    expect(renderPlanAndExecuteContext(state, 8)).not.toContain('Before taking another task action')
 
     state = foldLinearPlanState(state, event({
       type: 'tool/call', seq: 9, time: 0,
@@ -48,7 +47,7 @@ describe('Plan-and-Execute Harness', () => {
       data: { turn: 1, step: 9, message: { content: [{ type: 'tool-result', toolCallId: 'summary-1', content: [], isError: false }] } },
     }))
     expect(state.latestSummary).toBe('Inspection and change complete; verify next.')
-    expect(renderPlanAndExecuteContext(state, 8)).not.toContain('call record_progress')
+    expect(renderPlanAndExecuteContext(state, 8)).not.toContain('Call record_progress')
   })
 
   it('does not accept a failed roadmap submission', () => {
@@ -61,5 +60,20 @@ describe('Plan-and-Execute Harness', () => {
       data: { turn: 1, step: 1, message: { content: [{ type: 'tool-result', toolCallId: 'plan-1', content: [], isError: true }] } },
     }))
     expect(state.plan).toBeNull()
+  })
+
+  it('does not count a protocol denial as an action step', () => {
+    let state: LinearPlanState = { ...initialLinearPlanState(), plan: ['Inspect', 'Change', 'Verify'] }
+    state = foldLinearPlanState(state, event({
+      type: 'tool/call', seq: 0, time: 0,
+      data: { turn: 1, step: 1, callId: 'denied', name: 'submit_plan', arguments: JSON.stringify({ steps: ['Repeat', 'Repeat', 'Repeat'] }) },
+    }))
+    state = foldLinearPlanState(state, event({
+      type: 'tool/result', seq: 1, time: 0,
+      data: { turn: 1, step: 1, message: { content: [{ type: 'tool-result', toolCallId: 'denied', content: [{ type: 'text', text: 'Error: [harness-protocol] invalid management call' }], isError: true }] } },
+    }))
+    state = foldLinearPlanState(state, event({ type: 'step/end', seq: 2, time: 0, data: { turn: 1, step: 1 } }))
+    expect(state.actionSteps).toBe(0)
+    expect(state.pendingPlan).toBeNull()
   })
 })

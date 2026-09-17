@@ -7,6 +7,7 @@ import type {} from '@deepseek-ai/dsh-token-meter'
 import { z } from 'zod'
 import { auxiliaryText } from '../runtime/auxiliary-llm.js'
 import { contentText } from '../runtime/content.js'
+import { isHarnessProtocolDenialResult } from '../runtime/protocol.js'
 import { registerHarnessPrompt } from '../runtime/prompt.js'
 
 const MEMOBRAIN_SOURCE = 'harness-all-in-dsh:memobrain'
@@ -266,6 +267,7 @@ export function foldMemoBrainState(state: MemoBrainState, event: SessionEvent): 
     if (call === undefined) return state
     const nextCalls = { ...state.pendingCalls }
     delete nextCalls[id]
+    if (isHarnessProtocolDenialResult(event)) return { ...state, pendingCalls: nextCalls }
     const assistant = state.assistants[String(call.step)]
     return {
       ...state,

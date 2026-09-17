@@ -9,4 +9,3 @@
     harness: gam
     summaryInterval: 8
     reorgInterval: 4
-    protocolMode: guided
