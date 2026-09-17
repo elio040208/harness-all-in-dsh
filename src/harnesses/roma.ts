@@ -7,6 +7,7 @@ import { auxiliaryText } from '../runtime/auxiliary-llm.js'
 import { assertValidDag, readyDagNodeIds } from '../runtime/dag.js'
 import { contentText } from '../runtime/content.js'
 import { registerHarnessPrompt } from '../runtime/prompt.js'
+import { installHarnessProtocol } from '../runtime/protocol.js'
 import { runIsolatedAgent } from '../runtime/subagent-ensemble.js'
 import { trajectoryFinalAnswer } from '../runtime/trajectory.js'
 
@@ -300,11 +301,6 @@ export function applyRoma(ctx: Context, config: RomaConfig): void {
   const completed = new WeakSet<Agent>()
   const reminders = new WeakMap<Agent, number>()
   ctx.tools.register(runTool(ctx, config, completed))
-  ctx.tools.guard(exec => {
-    const agent = exec.agent
-    if (agent === undefined || agent.session.header.parentSession !== undefined) return undefined
-    return exec.name === RUN_TOOL ? undefined : `ROMA coordinator must call ${RUN_TOOL}; atomic task tools belong to executor children.`
-  })
   ctx.on('agent/turn-stopping', ({ agent }) => {
     if (agent.session.header.parentSession !== undefined || completed.has(agent)) return
     const count = reminders.get(agent) ?? 0
@@ -320,5 +316,14 @@ export function applyRoma(ctx: Context, config: RomaConfig): void {
     text: ({ agent }) => agent?.session.header.parentSession === undefined
       ? `Operate only as the ROMA coordinator. Immediately call ${RUN_TOOL} with an empty object. Do not solve the task yourself or call ordinary task tools; the composite tool recursively atomizes, plans dependency-aware subtasks, runs atomic executors, aggregates upward, and concludes the turn.`
       : '',
+  })
+  installHarnessProtocol(ctx, {
+    id: 'roma',
+    resolve: agent => agent.session.header.parentSession !== undefined
+      ? { id: 'executor', context: '' }
+      : {
+          id: 'coordinate', context: '', allowedTools: new Set([RUN_TOOL]),
+          denial: `ROMA coordinator must call ${RUN_TOOL}; atomic task tools belong to executor children.`,
+        },
   })
 }
