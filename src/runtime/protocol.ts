@@ -37,7 +37,7 @@ export interface HarnessProtocolHandle {
 }
 
 function filterTools(assembly: PromptAssembly, phase: HarnessProtocolPhase): PromptAssembly {
-  if (phase.allowedTools === undefined && phase.deniedTools === undefined) return assembly
+  if (phase.allowedTools === undefined && phase.deniedTools === undefined && phase.allows === undefined) return assembly
   return { ...assembly, tools: assembly.tools.filter(tool => admits(phase, tool.name)) }
 }
 

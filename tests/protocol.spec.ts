@@ -42,7 +42,7 @@ describe('Harness response protocol', () => {
         id: 'test',
         resolve: () => phase === 'work'
           ? { id: 'work', context: 'Work phase.', allowedTools: new Set(['task_one', 'task_two']), denial: 'Task phase only.' }
-          : { id: 'maintain', context: 'Maintenance phase.', allowedTools: new Set(['maintain']), denial: 'Maintenance is required.' },
+          : { id: 'maintain', context: 'Maintenance phase.', allows: name => name === 'maintain', denial: 'Maintenance is required.' },
       })
 
       const assembly = await ctx.systemPrompt.assemble(assembleContextFor(agent))
