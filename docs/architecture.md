@@ -31,6 +31,7 @@ AggAgent, OAgent, ROMA, and AOrchestra own a bounded coordination action. They c
 - `runtime/trajectory.ts` projects child Sessions into searchable, bounded trajectories.
 - `runtime/subagent-ensemble.ts` owns isolated child creation, tool denial, settlement, and disposal.
 - `runtime/prompt.ts` keeps invariant policy in the system prompt and changing Harness state in runtime-context snapshots.
+- `runtime/protocol.ts` freezes one Harness phase per model response, derives its runtime context and visible tool set together, and retains guards only as a fallback for calls the model could not see.
 - `presets/_shared/agent-tools.cordis.yml` defines the common model-facing tools used by Web presets.
 
 Harness-specific state remains in its owning module until at least two implementations need the same behavior.
@@ -40,6 +41,8 @@ Harness-specific state remains in its owning module until at least two implement
 Anything that changes a later model request must be reproducible from Session data. Planning, summarization, folding, memory selection, delegation configuration, aggregation, and voting therefore use durable events, tool results, or plugin-authored messages. A private auxiliary call is acceptable only when its input, route, output, and failure state are represented in the Session lifecycle.
 
 Dynamic context providers derive their text from replayable projection state. DSH logs a new user-role runtime-context snapshot only when that text changes, while the system prompt remains stable across execution-state transitions.
+
+Protocol phases are response-atomic. State produced by one tool call becomes eligible to change admission only at the next prompt assembly, so exclusive barriers and bounded parallel scheduling cannot reject sibling calls that were generated from the same request. Structural phases are always enforced. Periodic maintenance is advisory in `guided` mode and enforced in `strict` mode.
 
 Surface replacement changes what the model sees; it never deletes the underlying Session events. Replay reconstructs the same working state without rerunning prior model calls.
 

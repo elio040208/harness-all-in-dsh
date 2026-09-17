@@ -47,6 +47,8 @@ dsh web
 
 这些 preset 共享 Shell、文件、搜索、Skill 和用户提问工具。计划、记忆、折叠、压缩和子 Agent 行为只由所选 Harness 提供。Web 进程统一管理部署级工具调用并发上限，因此 preset 不会覆盖该设置。
 
+Web preset 使用 `protocolMode: guided`：提交初始计划、创建 DAG、摘要上一响应产生的 GAM 页面以及隔离协调器工具等结构要求仍会强制执行；周期性进度复查和 GAM 整合则作为模型可见建议。每个响应只看到其起始阶段允许的工具，同一响应中较早调用的结果不会让后续调用失效。
+
 ## 从命令行运行
 
 从 `headless` 创建 profile，安装 bundle，再应用目标 Harness overlay：
@@ -58,6 +60,8 @@ dsh --profile harness-react --patch /absolute/path/to/harness-all-in-dsh/profile
 ```
 
 把 `react` 替换为 [`profiles/`](profiles/) 中的其他文件名，即可选择另一种 Harness。Headless overlay 保存了各 Harness 的并行调用上限，用于可复现的实验。
+
+Plan-and-Execute、Flash-Searcher 和 GAM 的 headless overlay 使用 `protocolMode: strict`，同时强制执行周期复查和整合阶段。交互使用更重视吞吐量时，可以把该字段改为 `guided`。
 
 从源码安装会运行 package 的 `prepare` 脚本。从 GitHub 安装时，请先阅读 DSH 提示，再允许执行构建脚本。
 

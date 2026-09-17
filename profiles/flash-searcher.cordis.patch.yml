@@ -4,6 +4,7 @@
       config:
         harness: flash-searcher
         summaryInterval: 8
+        protocolMode: strict
 
 - id: agent-loop
   config:

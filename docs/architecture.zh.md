@@ -31,6 +31,7 @@ AggAgent、OAgent、ROMA 和 AOrchestra 拥有一个有界协调动作。它们�
 - `runtime/trajectory.ts` 把子 Session 投影为可搜索、有长度限制的轨迹。
 - `runtime/subagent-ensemble.ts` 管理隔离子任务的创建、工具拒绝、结果结算和释放。
 - `runtime/prompt.ts` 把不变策略保留在 system prompt 中，把变化的 Harness 状态写入 runtime-context snapshot。
+- `runtime/protocol.ts` 为每个模型响应冻结一个 Harness 阶段，从同一阶段同时派生 runtime context 和可见工具，并只把 guard 保留为拦截模型不可见调用的兜底。
 - `presets/_shared/agent-tools.cordis.yml` 定义 Web preset 共用的模型工具。
 
 在至少两个实现需要相同行为之前，Harness 特有状态保留在各自模块中。
@@ -40,6 +41,8 @@ AggAgent、OAgent、ROMA 和 AOrchestra 拥有一个有界协调动作。它们�
 凡是会改变后续模型请求的内容，都必须能从 Session 数据复现。因此，计划、总结、折叠、记忆选择、委派配置、聚合和投票都使用持久事件、工具结果或插件消息。只有当输入、路由、输出和失败状态都进入 Session 生命周期时，插件才可以使用私有辅助模型调用。
 
 动态 context provider 从可回放的 projection state 派生文本。DSH 只在文本变化时记录新的 user-role runtime-context snapshot，而 system prompt 在执行状态转换期间保持稳定。
+
+Protocol phase 以模型响应为原子单位。一个工具调用产生的状态只能在下一次 prompt assembly 时改变准入规则，因此 exclusive barrier 和有界并行调度不会拒绝同一请求生成的后续调用。结构阶段始终强制执行；周期维护在 `guided` 模式下只提醒，在 `strict` 模式下强制执行。
 
 Surface replacement 只改变模型看到的内容，不会删除底层 Session 事件。回放可以重建相同工作状态，而不重新运行之前的模型调用。
 

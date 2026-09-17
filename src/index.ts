@@ -101,6 +101,7 @@ export { aorchestraToolCatalogue, aorchestraTraceSummary, applyAOrchestra, rende
 export type { AOrchestraConfig, AOrchestraDelegation, AOrchestraTuple } from './harnesses/aorchestra.js'
 export { foldToolEpisodes, initialToolEpisodeCollection } from './runtime/tool-episodes.js'
 export type { ToolEpisode, ToolEpisodeAction, ToolEpisodeCollection } from './runtime/tool-episodes.js'
+export type { HarnessProtocolMode } from './runtime/protocol.js'
 export type {
   MemoBrainConfig,
   MemoBrainState,

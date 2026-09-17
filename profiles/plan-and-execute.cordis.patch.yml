@@ -4,6 +4,7 @@
       config:
         harness: plan-and-execute
         summaryInterval: 8
+        protocolMode: strict
 
 - id: agent-loop
   config:

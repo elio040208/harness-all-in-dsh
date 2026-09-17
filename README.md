@@ -47,6 +47,8 @@ Create a new Session and choose one of the modes whose name starts with `Harness
 
 The presets share Shell, filesystem, search, Skill, and user-question tools. Planning, memory, folding, compaction, and child-Agent behavior come only from the selected Harness. The Web process owns the deployment-wide parallel tool-call limit, so a preset does not override that setting.
 
+Web presets use `protocolMode: guided`: structural requirements such as submitting the initial plan, creating the DAG, memorizing the previous GAM response, and keeping coordinator tools separate remain enforced, while periodic progress reviews and GAM integration are model-visible recommendations. A response sees only the tools admitted by its starting phase; results from earlier calls in that same response cannot invalidate later calls.
+
 ## Run a Harness from the command line
 
 Create a profile from `headless`, install the bundle, and apply the selected Harness overlay:
@@ -58,6 +60,8 @@ dsh --profile harness-react --patch /absolute/path/to/harness-all-in-dsh/profile
 ```
 
 Replace `react` with another file name from [`profiles/`](profiles/) to select a different Harness. The headless overlays carry Harness-specific parallel-call limits for reproducible experiments.
+
+The Plan-and-Execute, Flash-Searcher, and GAM headless overlays use `protocolMode: strict`, which also enforces periodic review and integration phases. Change that field to `guided` when interactive throughput matters more than fixed cadence.
 
 Installing from source runs the package `prepare` script. Follow the DSH prompt before allowing the build script for a GitHub installation.
 

@@ -5,6 +5,7 @@
         harness: gam
         summaryInterval: 8
         reorgInterval: 4
+        protocolMode: strict
 
 - id: agent-loop
   config:

@@ -8,3 +8,4 @@
   config:
     harness: flash-searcher
     summaryInterval: 8
+    protocolMode: guided
