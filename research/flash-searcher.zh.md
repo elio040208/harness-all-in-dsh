@@ -16,7 +16,7 @@ Flash-Searcher 先通过专用 planning call 把任务拆成 1–5 个 goal，�
 
 ## DSH 实现
 
-模型必须先调用 `submit_dag_plan`。结构化图包含稳定 goal id、显式依赖和有序 fallback path。验证会拒绝重复 id、缺失依赖、重复依赖、自依赖和环。Session projection 只在工具成功后提交图，并在回放时重建。动态 system prompt 根据依赖完成情况计算 ready goal，并显示每条 path 的成功条件。
+模型必须先调用 `submit_dag_plan`。结构化图包含稳定 goal id、显式依赖和有序 fallback path。验证会拒绝重复 id、缺失依赖、重复依赖、自依赖和环。Session projection 只在工具成功后提交图，并在回放时重建。Runtime-context snapshot 根据依赖完成情况计算 ready goal，并显示每条 path 的成功条件，不改变 system policy。
 
 Headless profile 把 `agent-loop.maxParallelToolCalls` 设为 5。模型可在一次回复中为不同 ready goal 发出独立 call，DSH 并发调度并保持持久 call/result 配对。`record_dag_review` 记录 goal 状态和 active path 转换；达到配置间隔时，guard 要求完整图 review。
 

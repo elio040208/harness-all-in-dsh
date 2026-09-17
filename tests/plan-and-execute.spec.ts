@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   foldLinearPlanState,
   initialLinearPlanState,
-  renderPlanAndExecutePrompt,
+  renderPlanAndExecuteContext,
 } from '../src/harnesses/plan-and-execute.js'
 import type { LinearPlanState } from '../src/harnesses/plan-and-execute.js'
 
@@ -14,7 +14,7 @@ function event(value: object): SessionEvent {
 describe('Plan-and-Execute Harness', () => {
   it('requires and then replays the accepted linear roadmap', () => {
     let state = initialLinearPlanState()
-    expect(renderPlanAndExecutePrompt(state, 8)).toContain('call submit_plan')
+    expect(renderPlanAndExecuteContext(state, 8)).toContain('call submit_plan')
 
     state = foldLinearPlanState(state, event({
       type: 'tool/call', seq: 0, time: 0,
@@ -26,7 +26,7 @@ describe('Plan-and-Execute Harness', () => {
     }))
 
     expect(state.plan).toEqual(['Inspect', 'Change', 'Verify'])
-    expect(renderPlanAndExecutePrompt(state, 8)).toContain('1. Inspect\n2. Change\n3. Verify')
+    expect(renderPlanAndExecuteContext(state, 8)).toContain('1. Inspect\n2. Change\n3. Verify')
   })
 
   it('requests a durable progress review at the configured interval', () => {
@@ -35,7 +35,7 @@ describe('Plan-and-Execute Harness', () => {
       state = foldLinearPlanState(state, event({ type: 'step/end', seq: step, time: 0, data: { turn: 1, step } }))
     }
     expect(state.actionSteps).toBe(8)
-    expect(renderPlanAndExecutePrompt(state, 8)).toContain('call record_progress')
+    expect(renderPlanAndExecuteContext(state, 8)).toContain('call record_progress')
 
     state = foldLinearPlanState(state, event({
       type: 'tool/call', seq: 9, time: 0,
@@ -46,7 +46,7 @@ describe('Plan-and-Execute Harness', () => {
       data: { turn: 1, step: 9, message: { content: [{ type: 'tool-result', toolCallId: 'summary-1', content: [], isError: false }] } },
     }))
     expect(state.latestSummary).toBe('Inspection and change complete; verify next.')
-    expect(renderPlanAndExecutePrompt(state, 8)).not.toContain('call record_progress')
+    expect(renderPlanAndExecuteContext(state, 8)).not.toContain('call record_progress')
   })
 
   it('does not accept a failed roadmap submission', () => {

@@ -13,7 +13,7 @@
 
 ## DSH 实现
 
-实现保留 DSH Agent loop 和完整 Session 历史。第一个模型步骤必须调用 `submit_plan` 提交 3–7 个有序步骤，tool guard 在成功前阻止任务工具。成功 call 和 result 作为普通 Session 事件持久化。Host projection 从这些事件恢复当前 roadmap、执行步数和 resume 状态。达到配置间隔时，guard 要求模型先调用 `record_progress`。System-prompt section 会在每次请求中呈现回放得到的 roadmap 和最新摘要。
+实现保留 DSH Agent loop 和完整 Session 历史。第一个模型步骤必须调用 `submit_plan` 提交 3–7 个有序步骤，tool guard 在成功前阻止任务工具。成功 call 和 result 作为普通 Session 事件持久化。Host projection 从这些事件恢复当前 roadmap、执行步数和 resume 状态。达到配置间隔时，guard 要求模型先调用 `record_progress`。Runtime-context snapshot 只在状态变化时呈现回放得到的 roadmap 和最新摘要，system policy 保持稳定。
 
 ## 共享组件
 

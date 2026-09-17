@@ -25,6 +25,6 @@
 ## 有意差异
 
 - 官方 OAgents 支持通用 best-of-N 和 list-wise test-time scaling；本实现采用一个 PE 专家、两个 ReAct 专家和 evidence-aware JSON critic 的固定组合。
-- 参考适配会在顺序专家之间重置复制的 filesystem baseline，再恢复选中输出。DSH 隔离会话状态，但不会覆盖或回滚用户共享 working tree，避免破坏无关或并发修改。
+- DSH 隔离子 Session 的会话状态，但不会覆盖或回滚用户共享 working tree，避免破坏无关或并发修改。Filesystem side effect 因此仍然共享并显式公开。
 - 专家使用原生 DSH tool call 和标准 Agent loop，不使用 marker JSON action 和嵌套 Python loop。
 - 参考实现按字符截断 evidence；共享 DSH trajectory 按单词限制，避免在 Unicode codepoint 中间截断。

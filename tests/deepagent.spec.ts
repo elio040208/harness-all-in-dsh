@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import type { SessionEvent } from '@deepseek-ai/dsh-session'
 import { describe, expect, it } from 'vitest'
-import { foldDeepAgentState, initialDeepAgentState, renderDeepAgentCheckpoint } from '../src/index.js'
+import { foldDeepAgentState, initialDeepAgentState, renderDeepAgentCheckpoint, renderDeepAgentContext } from '../src/index.js'
 
 function event(value: object): SessionEvent {
   return value as SessionEvent
@@ -39,6 +39,7 @@ describe('DeepAgent Harness', () => {
     expect(checkpoint).toContain('Working Memory:')
     expect(checkpoint).toContain('Tool Memory:')
     expect(checkpoint).not.toContain('Inspect evidence.')
+    expect(renderDeepAgentContext(state, 3)).toContain('2 fold(s) remain')
   })
 
   it('records tool searches as interactions and rejects no fold details from raw history', () => {

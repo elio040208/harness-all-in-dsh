@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { aorchestraTraceSummary, trajectoryFinalAnswer } from '../src/index.js'
-import type { AgentTrajectory } from '../src/index.js'
+import { aorchestraTraceSummary, renderAOrchestraContext, trajectoryFinalAnswer } from '../src/index.js'
+import type { AgentTrajectory, AOrchestraConfig } from '../src/index.js'
 
 const trajectory: AgentTrajectory = {
   id: 1,
@@ -31,5 +31,12 @@ describe('AOrchestra Harness', () => {
     expect(profile).toContain('harness: aorchestra')
     expect(profile).toContain('aorchestraModels: deepseek-v4.1-flash')
     expect(profile).toContain('aorchestraMaxDelegations: 5')
+
+    const config: AOrchestraConfig = {
+      subagentProvider: 'spawn', modelProvider: '', models: ['deepseek-v4.1-flash'],
+      maxDelegations: 5, controllerReminderLimit: 2,
+    }
+    expect(renderAOrchestraContext(2, config, '- bash: run commands'))
+      .toContain('Delegation budget: 2/5 used')
   })
 })

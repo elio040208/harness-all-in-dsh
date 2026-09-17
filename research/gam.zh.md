@@ -10,7 +10,7 @@
 
 ## 定义行为
 
-GAM 把轻量记忆和无损历史分开。Memorizer 为每个输入生成简短 abstract，同时把完整输入保存为不可变 page。Researcher 从 abstract catalogue 规划检索，通过关键词、dense vector 和 page index 搜索，去重结果、整合事实、判断充分性，并按需发起聚焦检索。固定适配把该 memory 与 Flash-Searcher DAG planning 组合，每四个 action step 重组一次，并向模型提供 integrated memory 和最新三个 raw step，而不是全部轨迹。
+GAM 把轻量记忆和无损历史分开。Memorizer 为每个输入生成简短 abstract，同时把完整输入保存为不可变 page。Researcher 从 abstract catalogue 规划检索，通过关键词、dense vector 和 page index 搜索，去重结果、整合事实、判断充分性，并按需发起聚焦检索。
 
 ## DSH 实现
 

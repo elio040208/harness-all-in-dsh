@@ -5,7 +5,7 @@ import type { ProjectionDefinition } from '@deepseek-ai/dsh-session-projection'
 import type { ToolDefinition, ToolExecution } from '@deepseek-ai/dsh-tools'
 import { z } from 'zod'
 import { assertValidDag, readyDagNodeIds } from '../runtime/dag.js'
-import { registerHarnessPrompt } from '../runtime/prompt.js'
+import { registerHarnessContext, registerHarnessPrompt } from '../runtime/prompt.js'
 
 const SUBMIT_DAG_TOOL = 'submit_dag_plan'
 const REVIEW_DAG_TOOL = 'record_dag_review'
@@ -235,10 +235,12 @@ function reviewDue(state: FlashSearcherState, interval: number): boolean {
     && state.actionSteps % interval === 0 && state.reviewedAt < state.actionSteps
 }
 
-/** Render the current DAG directive from replayed state. */
-export function renderFlashSearcherPrompt(state: FlashSearcherState, interval: number): string {
+const FLASH_SEARCHER_PROMPT = `Operate as Flash-Searcher. Advance all ready unresolved goals concurrently when their tool calls are independent. Within one goal, use one path at a time and move to a later path only when the current path fails, stalls, or misses its success criteria. Do not mark a goal complete without evidence. Record a DAG review whenever evidence changes a goal's status or active path so dependent goals can become ready, and whenever the current state requires a periodic review. DSH may execute up to five tool calls from one response concurrently; use those slots across different ready goals. Finalize only after every required goal is resolved.`
+
+/** Render the current DAG and review requirement from replayed state. */
+export function renderFlashSearcherContext(state: FlashSearcherState, interval: number): string {
   if (state.goals === null) {
-    return `Operate as Flash-Searcher. Before using task tools, call ${SUBMIT_DAG_TOOL} with 1-5 goals. Give each goal a stable id, explicit dependencies, and 1-5 sequential fallback paths with success criteria. The dependencies must form a DAG.`
+    return `Flash-Searcher state: no DAG has been accepted. Before using task tools, call ${SUBMIT_DAG_TOOL} with 1-5 goals. Give each goal a stable id, explicit dependencies, and 1-5 sequential fallback paths with success criteria. The dependencies must form a DAG.`
   }
   const completed = new Set(
     state.latestReview?.filter(item => item.status === 'completed').map(item => item.goalId) ?? [],
@@ -255,7 +257,7 @@ export function renderFlashSearcherPrompt(state: FlashSearcherState, interval: n
   const periodic = reviewDue(state, interval)
     ? `\n\nBefore another task action, call ${REVIEW_DAG_TOOL}. Report every goal, evidence-based status, active fallback path, result so far, and next action.`
     : ''
-  return `Operate as Flash-Searcher with the durable DAG below. Advance all ready unresolved goals concurrently when their tool calls are independent. Within one goal, use one path at a time and move to a later path only when the current path fails, stalls, or misses its success criteria. Do not mark a goal complete without evidence. Call ${REVIEW_DAG_TOOL} whenever evidence changes a goal's status or active path so dependent goals can become ready; the Harness also requires a complete review periodically. DSH may execute up to five tool calls from one response concurrently; use those slots across different ready goals. Finalize only after every required goal is resolved.\n\nReady goals: ${ready.join(', ') || '(none)'}\n\nDAG:\n${graph}\n\nLatest review:\n${review}${periodic}`
+  return `Flash-Searcher state.\n\nReady goals: ${ready.join(', ') || '(none)'}\n\nDAG:\n${graph}\n\nLatest review:\n${review}${periodic}`
 }
 
 function requireAgent(exec: ToolExecution, toolName: string): Agent {
@@ -346,13 +348,14 @@ export function applyFlashSearcher(ctx: Context, config: FlashSearcherConfig): v
     if (exec.name === SUBMIT_DAG_TOOL) return 'The initial DAG is already fixed.'
     return undefined
   })
-  registerHarnessPrompt(ctx, {
+  registerHarnessPrompt(ctx, { id: 'flash-searcher', text: FLASH_SEARCHER_PROMPT })
+  registerHarnessContext(ctx, {
     id: 'flash-searcher',
     text: ({ agent }) => {
       if (agent === undefined) return ''
       const state = ctx.sessionProjections.stateOf(agent.session, FLASH_SEARCHER_PROJECTION_KEY)
       if (state === undefined) throw new Error('Flash-Searcher projection is unavailable')
-      return renderFlashSearcherPrompt(state, config.summaryInterval)
+      return renderFlashSearcherContext(state, config.summaryInterval)
     },
   })
 }

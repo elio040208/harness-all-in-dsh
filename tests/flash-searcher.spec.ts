@@ -6,7 +6,7 @@ import {
   foldFlashSearcherState,
   initialFlashSearcherState,
   readyDagNodeIds,
-  renderFlashSearcherPrompt,
+  renderFlashSearcherContext,
 } from '../src/index.js'
 import type { FlashGoal, FlashSearcherState } from '../src/index.js'
 
@@ -38,7 +38,7 @@ describe('Flash-Searcher Harness', () => {
 
   it('persists an accepted DAG and renders dependency-aware execution state', () => {
     let state = initialFlashSearcherState()
-    expect(renderFlashSearcherPrompt(state, 8)).toContain('call submit_dag_plan')
+    expect(renderFlashSearcherContext(state, 8)).toContain('call submit_dag_plan')
     state = foldFlashSearcherState(state, event({
       type: 'tool/call', seq: 0, time: 0,
       data: { turn: 1, step: 1, callId: 'plan-1', name: 'submit_dag_plan', arguments: JSON.stringify({ goals }) },
@@ -48,8 +48,8 @@ describe('Flash-Searcher Harness', () => {
       data: { turn: 1, step: 1, message: { content: [{ type: 'tool-result', toolCallId: 'plan-1', content: [], isError: false }] } },
     }))
     expect(state.goals).toEqual(goals)
-    expect(renderFlashSearcherPrompt(state, 8)).toContain('Ready goals: facts')
-    expect(renderFlashSearcherPrompt(state, 8)).toContain('Depends on: facts')
+    expect(renderFlashSearcherContext(state, 8)).toContain('Ready goals: facts')
+    expect(renderFlashSearcherContext(state, 8)).toContain('Depends on: facts')
   })
 
   it('requires a full graph review at the configured interval', () => {
@@ -57,7 +57,7 @@ describe('Flash-Searcher Harness', () => {
     for (let step = 1; step <= 8; step += 1) {
       state = foldFlashSearcherState(state, event({ type: 'step/end', seq: step, time: 0, data: { turn: 1, step } }))
     }
-    expect(renderFlashSearcherPrompt(state, 8)).toContain('call record_dag_review')
+    expect(renderFlashSearcherContext(state, 8)).toContain('call record_dag_review')
 
     const review = [
       { goalId: 'facts', status: 'completed', activePath: 1, result: 'Primary facts collected.', nextAction: 'No action.' },
@@ -71,8 +71,8 @@ describe('Flash-Searcher Harness', () => {
       type: 'tool/result', seq: 10, time: 0,
       data: { turn: 1, step: 9, message: { content: [{ type: 'tool-result', toolCallId: 'review-1', content: [], isError: false }] } },
     }))
-    expect(renderFlashSearcherPrompt(state, 8)).toContain('Ready goals: verify')
-    expect(renderFlashSearcherPrompt(state, 8)).not.toContain('call record_dag_review')
+    expect(renderFlashSearcherContext(state, 8)).toContain('Ready goals: verify')
+    expect(renderFlashSearcherContext(state, 8)).not.toContain('call record_dag_review')
   })
 
   it('enables five DSH-native parallel tool slots in its profile', () => {

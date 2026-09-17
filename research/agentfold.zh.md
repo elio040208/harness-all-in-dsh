@@ -26,7 +26,6 @@ AgentFold 复用 prompt registry 和 content extraction helper。连续 partitio
 
 ## 有意差异
 
-- JIT 固定适配把 AgentFold 与 Flash-Searcher DAG planning 和八步 replanning 组合；论文和官方 AgentFold runtime 没有该层，因此本实现省略。
 - 官方模型在一次 completion 中生成 `<compress>`、`<motivation>` 和 `<tool_call>` 文本；DSH 用两个原生 tool call 表示相同 fold/action 决策。
 - 官方 runtime 只支持 `search` 和 `visit`；DSH 向模型开放当前 profile 的任务工具，同时保留每次 interaction 一个外部 action 的指令。
 - 原代码没有验证 fold 必须结束于最新 interaction；本实现执行论文不变量，并拒绝拆分 active summary block 的 range。

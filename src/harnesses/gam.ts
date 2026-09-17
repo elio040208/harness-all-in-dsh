@@ -7,7 +7,7 @@ import type { ToolDefinition, ToolExecution } from '@deepseek-ai/dsh-tools'
 import { z } from 'zod'
 import { applyFlashSearcher } from './flash-searcher.js'
 import { contentText } from '../runtime/content.js'
-import { registerHarnessPrompt } from '../runtime/prompt.js'
+import { registerHarnessContext, registerHarnessPrompt } from '../runtime/prompt.js'
 
 const MEMORIZE_TOOL = 'gam_memorize_pages'
 const SEARCH_TOOL = 'gam_search_pages'
@@ -277,8 +277,10 @@ function reorgDue(state: GamState, interval: number): boolean {
   return state.actionSteps > state.integratedAt && state.actionSteps - state.integratedAt >= interval
 }
 
-/** Render the Memorizer catalogue and current Researcher result. */
-export function renderGamPrompt(state: GamState, interval: number): string {
+const GAM_PROMPT = 'Use General Agentic Memory (GAM). Complete tool observations are retained as immutable pages; concise abstracts are the lightweight MemoryStore. Research retrieves full pages only when needed and integrates facts relevant to the original task. Follow the current GAM state directive before another task action. Do not invent page ids or facts.'
+
+/** Render the Memorizer catalogue and current Researcher state. */
+export function renderGamContext(state: GamState, interval: number): string {
   const missing = state.pages.filter(page => page.abstract === null)
   const catalog = state.pages.map(page => `${page.id}: ${page.abstract ?? '(abstract pending)'}`).join('\n') || '(empty)'
   const integrated = state.integratedMemory ?? '(none yet)'
@@ -287,7 +289,7 @@ export function renderGamPrompt(state: GamState, interval: number): string {
     : reorgDue(state, interval)
       ? `GAM research is due. Use ${SEARCH_TOOL} one or more times over the abstract catalogue, then call ${INTEGRATE_TOOL} with a consolidated factual memory and the supporting page ids before another task action.`
       : 'Continue the DAG-guided task. Search the page store whenever older exact evidence is needed.'
-  return `Use General Agentic Memory (GAM). Complete tool observations are retained as immutable pages; concise abstracts are the lightweight MemoryStore. Research retrieves full pages just in time and integrates only facts relevant to the original task. Do not invent page ids or facts.\n\n${directive}\n\nIntegrated memory:\n${integrated}\n\nMemory catalogue:\n${catalog}`
+  return `GAM state.\n\n${directive}\n\nIntegrated memory:\n${integrated}\n\nMemory catalogue:\n${catalog}`
 }
 
 /** Render the compact model surface installed after GAM research integration. */
@@ -334,13 +336,14 @@ export function applyGam(ctx: Context, config: GamConfig): void {
     })
     return await next()
   })
-  registerHarnessPrompt(ctx, {
+  registerHarnessPrompt(ctx, { id: 'gam', text: GAM_PROMPT })
+  registerHarnessContext(ctx, {
     id: 'gam',
     text: ({ agent }) => {
       if (agent === undefined) return ''
       const state = ctx.sessionProjections.stateOf(agent.session, GAM_PROJECTION_KEY)
       if (state === undefined) throw new Error('GAM projection is unavailable')
-      return renderGamPrompt(state, config.reorgInterval)
+      return renderGamContext(state, config.reorgInterval)
     },
   })
 }

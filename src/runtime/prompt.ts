@@ -8,6 +8,12 @@ export interface HarnessPrompt {
   readonly text: string | ((context: AssembleContext) => string)
 }
 
+/** Replayable per-step state supplied outside the stable Harness policy. */
+export interface HarnessContext {
+  readonly id: string
+  readonly text: string | ((context: AssembleContext) => string)
+}
+
 /**
  * Register one fixed Harness policy in the shared system-prompt registry.
  *
@@ -20,5 +26,20 @@ export function registerHarnessPrompt(ctx: Context, prompt: HarnessPrompt): () =
     name: `harness-all-in-dsh:${prompt.id}`,
     order: 125,
     text: prompt.text,
+  })
+}
+
+/**
+ * Register dynamic Harness state as a durable runtime-context snapshot.
+ *
+ * @param ctx - Cordis context containing the DSH system-prompt service.
+ * @param context - Stable context id and replayable state renderer.
+ * @returns the registration disposer owned by the calling plugin fiber.
+ */
+export function registerHarnessContext(ctx: Context, context: HarnessContext): () => void {
+  return ctx.systemPrompt.context({
+    name: `harness-all-in-dsh:${context.id}:state`,
+    order: 125,
+    text: context.text,
   })
 }

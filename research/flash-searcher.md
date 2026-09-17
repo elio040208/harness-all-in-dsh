@@ -16,7 +16,7 @@ The paper describes a dependency DAG and aggressive parallel scheduling. The pub
 
 ## DSH implementation
 
-The planning model must call `submit_dag_plan` before task tools. Its structured graph contains stable goal ids, explicit dependencies, and ordered fallback paths. Validation rejects duplicate ids, missing dependencies, repeated or self dependencies, and cycles. A Session projection commits the graph only after the tool succeeds and reconstructs it on replay. The dynamic system-prompt section derives ready goals from dependency completion and shows every path's success criterion.
+The planning model must call `submit_dag_plan` before task tools. Its structured graph contains stable goal ids, explicit dependencies, and ordered fallback paths. Validation rejects duplicate ids, missing dependencies, repeated or self dependencies, and cycles. A Session projection commits the graph only after the tool succeeds and reconstructs it on replay. A runtime-context snapshot derives ready goals from dependency completion and shows every path's success criterion without changing the system policy.
 
 The profile raises `agent-loop.maxParallelToolCalls` to five. The model may therefore emit independent calls for different ready goals in one response, and DSH schedules them concurrently while preserving durable call/result pairing. `record_dag_review` records every goal after a status or active-path transition so completed prerequisites unlock dependents. Every configured eight action steps, the tool guard makes that complete graph review mandatory before another task action. A successful review updates the ready set and the current per-goal directive.
 

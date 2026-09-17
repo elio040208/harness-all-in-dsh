@@ -8,6 +8,7 @@ This project reproduces observable Harness behavior through DSH extension points
 
 - Implement behavior as plugins, projections, scoped tools, and surface policies. Do not embed a second general-purpose Agent runtime.
 - Keep every model-visible plan, summary, memory state, delegation choice, and aggregation result reconstructable from Session data.
+- Keep invariant Harness policy in system-prompt sections. Materialize changing execution state as durable runtime-context snapshots instead of rewriting the system prompt.
 - Keep child work in isolated DSH Sessions and copy only explicit results into a parent Session.
 - Expose deployment choices as plugin configuration. Keep model, tool, task, and budget settings outside Harness algorithms.
 - Record the inspected upstream revision and every intentional difference in `research/`.
@@ -16,7 +17,7 @@ This project reproduces observable Harness behavior through DSH extension points
 
 ### In-loop adaptations
 
-ReAct, Plan-and-Execute, ReSum, Flash-Searcher, GAM, MemoBrain, AgentFold, HiAgent, and DeepAgent retain the shipped DSH Agent loop. Their plugins contribute prompt sections, durable projections, scoped tools, request-time guards, and replay-aware surface replacement.
+ReAct, Plan-and-Execute, ReSum, Flash-Searcher, GAM, MemoBrain, AgentFold, HiAgent, and DeepAgent retain the shipped DSH Agent loop. Their plugins contribute stable policy sections, durable state projections and context snapshots, scoped tools, request-time guards, and replay-aware surface replacement.
 
 ### Coordinators
 
@@ -29,6 +30,7 @@ AggAgent, OAgent, ROMA, and AOrchestra own a bounded coordination action. They c
 - `runtime/tool-episodes.ts` groups replayed calls and results into complete interactions.
 - `runtime/trajectory.ts` projects child Sessions into searchable, bounded trajectories.
 - `runtime/subagent-ensemble.ts` owns isolated child creation, tool denial, settlement, and disposal.
+- `runtime/prompt.ts` keeps invariant policy in the system prompt and changing Harness state in runtime-context snapshots.
 - `presets/_shared/agent-tools.cordis.yml` defines the common model-facing tools used by Web presets.
 
 Harness-specific state remains in its owning module until at least two implementations need the same behavior.
@@ -36,6 +38,8 @@ Harness-specific state remains in its owning module until at least two implement
 ## Durability rule
 
 Anything that changes a later model request must be reproducible from Session data. Planning, summarization, folding, memory selection, delegation configuration, aggregation, and voting therefore use durable events, tool results, or plugin-authored messages. A private auxiliary call is acceptable only when its input, route, output, and failure state are represented in the Session lifecycle.
+
+Dynamic context providers derive their text from replayable projection state. DSH logs a new user-role runtime-context snapshot only when that text changes, while the system prompt remains stable across execution-state transitions.
 
 Surface replacement changes what the model sees; it never deletes the underlying Session events. Replay reconstructs the same working state without rerunning prior model calls.
 

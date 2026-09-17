@@ -5,6 +5,7 @@ import {
   applyAgentFoldSummary,
   foldAgentFoldState,
   initialAgentFoldState,
+  renderAgentFoldContext,
   renderAgentFoldWorkspace,
 } from '../src/index.js'
 import type { AgentFoldState } from '../src/index.js'
@@ -55,6 +56,7 @@ describe('AgentFold Harness', () => {
     expect(state.interactions[0]).toMatchObject({ id: 0, explanation: 'Inspect evidence 1.' })
     expect(renderAgentFoldWorkspace(state)).toContain('Latest Interaction\n**[Step 0]**')
     expect(renderAgentFoldWorkspace(state)).toContain('First raw observation')
+    expect(renderAgentFoldContext(state)).toContain('latest full interaction is Step 0')
 
     state = applyFold(state, 2, 6, 0, 0, 'Step 0 established the first fact.')
     state = addInteraction(state, 2, 8, 'Second raw observation')

@@ -7,13 +7,14 @@ import type { ToolDefinition, ToolExecution } from '@deepseek-ai/dsh-tools'
 import { z } from 'zod'
 import { auxiliaryText } from '../runtime/auxiliary-llm.js'
 import { contentText } from '../runtime/content.js'
-import { registerHarnessPrompt } from '../runtime/prompt.js'
+import { registerHarnessContext, registerHarnessPrompt } from '../runtime/prompt.js'
 import { foldToolEpisodes, initialToolEpisodeCollection } from '../runtime/tool-episodes.js'
 import type { ToolEpisode, ToolEpisodeCollection } from '../runtime/tool-episodes.js'
 
 const FOLD_TOOL = 'deepagent_fold_thoughts'
 const SEARCH_TOOL = 'deepagent_tool_search'
 const DEEPAGENT_SOURCE = 'harness-all-in-dsh:deepagent'
+const DEEPAGENT_PROMPT = `Operate as DeepAgent in one continuous reasoning-and-action stream without an up-front plan. Call exactly one tool per step. Use ${SEARCH_TOOL} when the current catalogue is too large or you need to discover a capability. When history is long, repeated failures suggest a stale strategy, or a fresh perspective would help, call ${FOLD_TOOL}; it will create episodic, working, and tool memories and reset the active trajectory. Do not repeat an identical tool call. Answer only when the task is resolved.`
 
 /** Host projection key for DeepAgent's three-memory folding state. */
 export const DEEPAGENT_PROJECTION_KEY = 'harness-all-in-dsh/deepagent' as const
@@ -231,6 +232,11 @@ export function renderDeepAgentCheckpoint(state: DeepAgentState): string {
   return `Task:\n${state.originalTask ?? '(unavailable)'}\n\nFold checkpoint #${fold.number} is complete. Continue after the fold; do not call the fold tool merely because pre-fold memory mentions it.\n\nMemory of previous folded thoughts:\n\nEpisode Memory:\n${fold.episodic}\n\nWorking Memory:\n${fold.working}\n\nTool Memory:\n${fold.tool}\n\nInteractions after the fold:\n${recent}`
 }
 
+/** Render the remaining model-directed fold budget. */
+export function renderDeepAgentContext(state: DeepAgentState, maxFolds: number): string {
+  return `DeepAgent state: ${maxFolds - state.folds.length} fold(s) remain.`
+}
+
 /** DeepAgent folding and auxiliary-call limits. */
 export interface DeepAgentConfig {
   readonly maxFolds: number
@@ -265,13 +271,14 @@ export function applyDeepAgent(ctx: Context, config: DeepAgentConfig): void {
     }
     return await next()
   })
-  registerHarnessPrompt(ctx, {
+  registerHarnessPrompt(ctx, { id: 'deepagent', text: DEEPAGENT_PROMPT })
+  registerHarnessContext(ctx, {
     id: 'deepagent',
     text: ({ agent }) => {
       if (agent === undefined) return ''
       const state = ctx.sessionProjections.stateOf(agent.session, DEEPAGENT_PROJECTION_KEY)
-      const remaining = config.maxFolds - (state?.folds.length ?? 0)
-      return `Operate as DeepAgent in one continuous reasoning-and-action stream without an up-front plan. Call exactly one tool per step. Use ${SEARCH_TOOL} when the current catalogue is too large or you need to discover a capability. When history is long, repeated failures suggest a stale strategy, or a fresh perspective would help, call ${FOLD_TOOL}; it will create episodic, working, and tool memories and reset the active trajectory. ${remaining} fold(s) remain. Do not repeat an identical tool call. Answer only when the task is resolved.`
+      if (state === undefined) throw new Error('DeepAgent projection is unavailable')
+      return renderDeepAgentContext(state, config.maxFolds)
     },
   })
 }

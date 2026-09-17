@@ -6,7 +6,7 @@ import type { ProjectionDefinition } from '@deepseek-ai/dsh-session-projection'
 import type { ToolDefinition, ToolExecution } from '@deepseek-ai/dsh-tools'
 import { z } from 'zod'
 import { contentText } from '../runtime/content.js'
-import { registerHarnessPrompt } from '../runtime/prompt.js'
+import { registerHarnessContext, registerHarnessPrompt } from '../runtime/prompt.js'
 import { foldToolEpisodes, initialToolEpisodeCollection } from '../runtime/tool-episodes.js'
 import type { ToolEpisode } from '../runtime/tool-episodes.js'
 
@@ -200,12 +200,14 @@ export function renderAgentFoldWorkspace(state: AgentFoldState): string {
   return `### Question\n${state.originalTask ?? '(unavailable)'}\n\n### Multi-Scale State Summaries\n${summaries}\n\n### Latest Interaction\n${latest === undefined ? 'EMPTY' : `**[Step ${latest.id}]**\n${interactionText(latest)}`}`
 }
 
-function prompt(state: AgentFoldState): string {
+const AGENTFOLD_PROMPT = `Operate as AgentFold's perceive-reason-fold-act loop. Your working context contains the invariant question, multi-scale summaries of older interactions, and one latest interaction at full fidelity. Do not make an up-front DAG plan and do not uniformly resummarize all history. Follow the current AgentFold state directive when choosing a fold and external action. If the task is complete, answer directly without another tool call. Never invent step ids or evidence.`
+
+/** Render the fold requirement for the latest replayed interaction. */
+export function renderAgentFoldContext(state: AgentFoldState): string {
   const latest = state.interactions.at(-1)
-  const folding = latest === undefined
-    ? `There is no previous interaction. Do not call ${FOLD_TOOL}; call exactly one task tool if external action is needed.`
-    : `The latest full interaction is Step ${latest.id}. If another external action is needed, emit exactly two tool calls in this response: (1) ${FOLD_TOOL}, whose range must end at ${latest.id}, and (2) exactly one task tool. Use start=${latest.id} for granular condensation, or start at an existing summary boundary for deep consolidation. The fold summary must preserve facts, sources, constraints, and unresolved leads needed later.`
-  return `Operate as AgentFold's perceive-reason-fold-act loop. Your working context contains the invariant question, multi-scale summaries of older interactions, and one latest interaction at full fidelity. Do not make an up-front DAG plan and do not uniformly resummarize all history.\n\n${folding}\n\nIf the task is complete, answer directly without another tool call. Never invent step ids or evidence.`
+  return latest === undefined
+    ? `AgentFold state: there is no previous interaction. Do not call ${FOLD_TOOL}; call exactly one task tool if external action is needed.`
+    : `AgentFold state: the latest full interaction is Step ${latest.id}. If another external action is needed, emit exactly two tool calls in this response: (1) ${FOLD_TOOL}, whose range must end at ${latest.id}, and (2) exactly one task tool. Use start=${latest.id} for granular condensation, or start at an existing summary boundary for deep consolidation. The fold summary must preserve facts, sources, constraints, and unresolved leads needed later.`
 }
 
 /** Install proactive model-directed folding on the native DSH Agent loop. */
@@ -226,13 +228,14 @@ export function applyAgentFold(ctx: Context): void {
     }
     return await next()
   })
-  registerHarnessPrompt(ctx, {
+  registerHarnessPrompt(ctx, { id: 'agentfold', text: AGENTFOLD_PROMPT })
+  registerHarnessContext(ctx, {
     id: 'agentfold',
     text: ({ agent }) => {
       if (agent === undefined) return ''
       const state = ctx.sessionProjections.stateOf(agent.session, AGENTFOLD_PROJECTION_KEY)
       if (state === undefined) throw new Error('AgentFold projection is unavailable')
-      return prompt(state)
+      return renderAgentFoldContext(state)
     },
   })
 }

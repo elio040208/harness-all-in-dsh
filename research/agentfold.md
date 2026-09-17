@@ -26,7 +26,6 @@ AgentFold reuses the project's prompt registry and content extraction helpers. I
 
 ## Intentional deviations
 
-- The JIT adaptation combines AgentFold with Flash-Searcher DAG planning and periodic eight-step replanning. Neither the paper nor the official AgentFold runtime does so, so this implementation omits that hybrid layer.
 - The official model emits custom `<compress>`, `<motivation>`, and `<tool_call>` text in one completion. DSH expresses the same fold/action decision through two native tool calls, preserving validation, Session logging, and ordinary tool presentation.
 - The official runtime is specialized to `search` and `visit`. The DSH reproduction exposes the current profile's task tools while retaining the one-external-action-per-interaction instruction.
 - The original code does not validate that a fold ends at the latest interaction even though its comment and paper require it. This implementation enforces the published invariant and rejects ranges that split an active summary block.

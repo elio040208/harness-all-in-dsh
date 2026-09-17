@@ -7,7 +7,7 @@ export {
   PLAN_AND_EXECUTE_PROJECTION_KEY,
   initialLinearPlanState,
   linearPlanProjectionDefinition,
-  renderPlanAndExecutePrompt,
+  renderPlanAndExecuteContext,
 } from './harnesses/plan-and-execute.js'
 export type { LinearPlanState, PlanAndExecuteConfig } from './harnesses/plan-and-execute.js'
 export { RESUM_PROMPT } from './harnesses/resum.js'
@@ -16,7 +16,7 @@ export {
   flashSearcherProjectionDefinition,
   foldFlashSearcherState,
   initialFlashSearcherState,
-  renderFlashSearcherPrompt,
+  renderFlashSearcherContext,
 } from './harnesses/flash-searcher.js'
 export type {
   FlashGoal,
@@ -33,7 +33,7 @@ export {
   gamProjectionDefinition,
   initialGamState,
   renderGamCheckpoint,
-  renderGamPrompt,
+  renderGamContext,
 } from './harnesses/gam.js'
 export type { GamConfig, GamPage, GamState } from './harnesses/gam.js'
 export {
@@ -70,6 +70,7 @@ export {
   applyAgentFoldSummary,
   foldAgentFoldState,
   initialAgentFoldState,
+  renderAgentFoldContext,
   renderAgentFoldWorkspace,
 } from './harnesses/agentfold.js'
 export type { AgentFoldInteraction, AgentFoldState, AgentFoldSummary } from './harnesses/agentfold.js'
@@ -90,12 +91,13 @@ export {
   deepAgentProjectionDefinition,
   foldDeepAgentState,
   initialDeepAgentState,
+  renderDeepAgentContext,
   renderDeepAgentCheckpoint,
 } from './harnesses/deepagent.js'
 export type { DeepAgentConfig, DeepAgentFold, DeepAgentState } from './harnesses/deepagent.js'
 export { applyRoma, parseRomaAtomizer, parseRomaPlan } from './harnesses/roma.js'
 export type { RomaConfig, RomaNode, RomaPlannedTask } from './harnesses/roma.js'
-export { aorchestraToolCatalogue, aorchestraTraceSummary, applyAOrchestra } from './harnesses/aorchestra.js'
+export { aorchestraToolCatalogue, aorchestraTraceSummary, applyAOrchestra, renderAOrchestraContext } from './harnesses/aorchestra.js'
 export type { AOrchestraConfig, AOrchestraDelegation, AOrchestraTuple } from './harnesses/aorchestra.js'
 export { foldToolEpisodes, initialToolEpisodeCollection } from './runtime/tool-episodes.js'
 export type { ToolEpisode, ToolEpisodeAction, ToolEpisodeCollection } from './runtime/tool-episodes.js'

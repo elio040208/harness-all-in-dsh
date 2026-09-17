@@ -27,4 +27,3 @@ Aggregator 保持在标准 DSH Agent loop 内。四个工具对应官方 `get_so
 - 官方评测流程会预先生成 rollout 文件；DSH 在父 Agent 第一个 pre-step 自动完成生成和聚合，使两阶段处于同一次 Session run。
 - 官方 aggregator 最多可进行 100 次私有 LLM iteration；DSH 使用部署配置的标准 Agent-loop 限制。
 - 官方代码支持 long-form 和 Qwen 特殊 finish format；本实现使用通用聚合路径的默认 XML solution format。
-- JIT 固定适配顺序运行 rollout；本实现遵循论文和官方并行扩展设计，并发运行隔离子任务。

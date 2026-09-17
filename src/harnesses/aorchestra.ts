@@ -3,7 +3,7 @@ import type { Agent } from '@deepseek-ai/dsh-agent'
 import { createUserMessage } from '@deepseek-ai/dsh-llm'
 import type {} from '@deepseek-ai/dsh-subagent'
 import type { ToolDefinition, ToolExecution } from '@deepseek-ai/dsh-tools'
-import { registerHarnessPrompt } from '../runtime/prompt.js'
+import { registerHarnessContext, registerHarnessPrompt } from '../runtime/prompt.js'
 import { runIsolatedAgent } from '../runtime/subagent-ensemble.js'
 import { trajectoryFinalAnswer, truncateWords } from '../runtime/trajectory.js'
 import type { AgentTrajectory } from '../runtime/trajectory.js'
@@ -188,10 +188,14 @@ function toolCatalogueText(agent: Agent | undefined): string {
   return tools.length === 0 ? '(none)' : tools.map(tool => `- ${tool.name}: ${(tool.description ?? '').slice(0, 180)}`).join('\n')
 }
 
-function coordinatorPrompt(agent: Agent | undefined, config: AOrchestraConfig, states: WeakMap<Agent, AOrchestraState>): string {
+function coordinatorPrompt(agent: Agent | undefined): string {
   if (agent?.session.header.parentSession !== undefined) return ''
-  const attempts = agent === undefined ? 0 : states.get(agent)?.delegations.length ?? 0
-  return `You are the AOrchestra MainAgent. Solve the task through dynamic sub-agents, not with ordinary tools yourself. For each remaining subtask call ${DELEGATE_TOOL} with the complete four-tuple: a specific instruction I, only relevant prior context C, the smallest sufficient tool-name whitelist T, and one allowed model M. Review every returned result and trace summary. Delegate only remaining work; do not repeat completed work. When evidence is sufficient, call ${COMPLETE_TOOL} with a standalone answer.\n\nDelegation budget: ${attempts}/${config.maxDelegations} used.\nAllowed models: ${config.models.join(', ')}\nAvailable child tools:\n${toolCatalogueText(agent)}`
+  return `You are the AOrchestra MainAgent. Solve the task through dynamic sub-agents, not with ordinary tools yourself. For each remaining subtask call ${DELEGATE_TOOL} with the complete four-tuple: a specific instruction I, only relevant prior context C, the smallest sufficient tool-name whitelist T, and one allowed model M. Review every returned result and trace summary. Delegate only remaining work; do not repeat completed work. When evidence is sufficient, call ${COMPLETE_TOOL} with a standalone answer.`
+}
+
+/** Render the current delegation budget and child capability catalogue. */
+export function renderAOrchestraContext(attempts: number, config: AOrchestraConfig, tools: string): string {
+  return `AOrchestra state.\n\nDelegation budget: ${attempts}/${config.maxDelegations} used.\nAllowed models: ${config.models.join(', ')}\nAvailable child tools:\n${tools}`
 }
 
 /** Install AOrchestra's iterative runtime-configured subagent controller. */
@@ -222,5 +226,12 @@ export function applyAOrchestra(ctx: Context, config: AOrchestraConfig): void {
       content: [{ type: 'text', text: `Do not answer directly. Call ${DELEGATE_TOOL} for remaining work or ${COMPLETE_TOOL} if prior delegations suffice.` }],
     }))
   })
-  registerHarnessPrompt(ctx, { id: 'aorchestra', text: ({ agent }) => coordinatorPrompt(agent, config, states) })
+  registerHarnessPrompt(ctx, { id: 'aorchestra', text: ({ agent }) => coordinatorPrompt(agent) })
+  registerHarnessContext(ctx, {
+    id: 'aorchestra',
+    text: ({ agent }) => {
+      if (agent === undefined || agent.session.header.parentSession !== undefined) return ''
+      return renderAOrchestraContext(states.get(agent)?.delegations.length ?? 0, config, toolCatalogueText(agent))
+    },
+  })
 }

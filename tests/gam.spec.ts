@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import type { SessionEvent } from '@deepseek-ai/dsh-session'
 import { describe, expect, it } from 'vitest'
-import { foldGamState, initialGamState, renderGamCheckpoint, renderGamPrompt } from '../src/index.js'
+import { foldGamState, initialGamState, renderGamCheckpoint, renderGamContext } from '../src/index.js'
 import type { GamState } from '../src/index.js'
 
 function event(value: object): SessionEvent {
@@ -44,18 +44,18 @@ describe('GAM Harness', () => {
     state = addPage(state, 1, 'ALPHA evidence')
     expect(state.originalTask).toBe('Investigate the task.')
     expect(state.pages[0]).toMatchObject({ id: 'page-0', content: 'ALPHA evidence', abstract: null })
-    expect(renderGamPrompt(state, 4)).toContain('call gam_memorize_pages')
+    expect(renderGamContext(state, 4)).toContain('call gam_memorize_pages')
 
     state = memorizeAll(state, 1)
     expect(state.pages[0]?.abstract).toBe('Abstract for ALPHA evidence')
-    expect(renderGamPrompt(state, 4)).toContain('Memory catalogue')
+    expect(renderGamContext(state, 4)).toContain('Memory catalogue')
   })
 
   it('requires research, persists integration, and records a completed fold', () => {
     let state = initialGamState()
     for (let step = 1; step <= 4; step += 1) state = memorizeAll(addPage(state, step, `evidence-${step}`), step)
     expect(state.actionSteps).toBe(4)
-    expect(renderGamPrompt(state, 4)).toContain('GAM research is due')
+    expect(renderGamContext(state, 4)).toContain('GAM research is due')
 
     const callId = 'integrate-1'
     state = foldGamState(state, event({
