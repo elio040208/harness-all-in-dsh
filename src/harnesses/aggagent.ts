@@ -5,6 +5,7 @@ import type {} from '@deepseek-ai/dsh-subagent'
 import type { ToolDefinition, ToolExecution } from '@deepseek-ai/dsh-tools'
 import { contentText } from '../runtime/content.js'
 import { registerHarnessPrompt } from '../runtime/prompt.js'
+import { installHarnessProtocol } from '../runtime/protocol.js'
 import {
   formatTrajectoryMetadata,
   searchTrajectory,
@@ -201,15 +202,6 @@ export function applyAggAgent(ctx: Context, config: AggAgentConfig): void {
   ctx.tools.register(searchTool(states))
   ctx.tools.register(getSegmentTool(states))
   ctx.tools.register(finishTool(states))
-  ctx.tools.guard(exec => {
-    const agent = exec.agent
-    if (agent === undefined || agent.session.header.parentSession !== undefined) return undefined
-    const state = states.get(agent)
-    if (state === undefined) return 'AggAgent rollout generation has not completed.'
-    return exec.name === GET_SOLUTION_TOOL || exec.name === SEARCH_TOOL || exec.name === GET_SEGMENT_TOOL || exec.name === FINISH_TOOL
-      ? undefined
-      : 'AggAgent aggregation may use only trajectory inspection tools and finish.'
-  })
   ctx.on('agent/pre-step', async ({ agent, messages, signal }, next) => {
     if (agent.session.header.parentSession !== undefined) return await next()
     let state = states.get(agent)
@@ -229,4 +221,15 @@ export function applyAggAgent(ctx: Context, config: AggAgentConfig): void {
     return { ...decision, messages: [...decision.messages, catalogueMessage(state.trajectories)] }
   })
   registerHarnessPrompt(ctx, { id: 'aggagent', text: ({ agent }) => renderPrompt(agent, states, config) })
+  installHarnessProtocol(ctx, {
+    id: 'aggagent',
+    resolve: agent => agent.session.header.parentSession !== undefined
+      ? { id: 'rollout', context: '' }
+      : {
+          id: 'aggregate',
+          context: '',
+          allowedTools: new Set(AGGREGATION_TOOLS),
+          denial: 'AggAgent aggregation may use only trajectory inspection tools and finish.',
+        },
+  })
 }
