@@ -89,10 +89,10 @@ export function apply(ctx: Context, config: Config): void {
       applyReSum(ctx)
       return
     case 'flash-searcher':
-      applyFlashSearcher(ctx, { summaryInterval: config.summaryInterval ?? 8 })
+      applyFlashSearcher(ctx, { summaryInterval: config.summaryInterval ?? 8, protocolMode: config.protocolMode ?? 'guided' })
       return
     case 'gam':
-      applyGam(ctx, { summaryInterval: config.summaryInterval ?? 8, reorgInterval: config.reorgInterval ?? 4 })
+      applyGam(ctx, { summaryInterval: config.summaryInterval ?? 8, reorgInterval: config.reorgInterval ?? 4, protocolMode: config.protocolMode ?? 'guided' })
       return
     case 'memobrain':
       ctx.inject(['llm', 'tokenMeter'], (ready) => {

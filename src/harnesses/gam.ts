@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { applyFlashSearcher } from './flash-searcher.js'
 import { contentText } from '../runtime/content.js'
 import { registerHarnessContext, registerHarnessPrompt } from '../runtime/prompt.js'
+import type { HarnessProtocolMode } from '../runtime/protocol.js'
 
 const MEMORIZE_TOOL = 'gam_memorize_pages'
 const SEARCH_TOOL = 'gam_search_pages'
@@ -271,6 +272,7 @@ function integrateTool(ctx: Context): ToolDefinition {
 export interface GamConfig {
   readonly summaryInterval: number
   readonly reorgInterval: number
+  readonly protocolMode: HarnessProtocolMode
 }
 
 function reorgDue(state: GamState, interval: number): boolean {
@@ -300,7 +302,7 @@ export function renderGamCheckpoint(state: GamState): string {
 /** Install Flash planning plus GAM Memorizer, Researcher tools, and surface folding. */
 export function applyGam(ctx: Context, config: GamConfig): void {
   if (!Number.isSafeInteger(config.reorgInterval) || config.reorgInterval < 1) throw new Error('gam reorgInterval must be a positive safe integer')
-  applyFlashSearcher(ctx, { summaryInterval: config.summaryInterval })
+  applyFlashSearcher(ctx, { summaryInterval: config.summaryInterval, protocolMode: config.protocolMode })
   ctx.sessionProjections.register(gamProjectionDefinition)
   ctx.tools.register(memorizeTool(ctx))
   ctx.tools.register(searchTool(ctx))

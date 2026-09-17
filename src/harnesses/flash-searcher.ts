@@ -5,7 +5,9 @@ import type { ProjectionDefinition } from '@deepseek-ai/dsh-session-projection'
 import type { ToolDefinition, ToolExecution } from '@deepseek-ai/dsh-tools'
 import { z } from 'zod'
 import { assertValidDag, readyDagNodeIds } from '../runtime/dag.js'
-import { registerHarnessContext, registerHarnessPrompt } from '../runtime/prompt.js'
+import { registerHarnessPrompt } from '../runtime/prompt.js'
+import { installHarnessProtocol } from '../runtime/protocol.js'
+import type { HarnessProtocolMode, HarnessProtocolPhase } from '../runtime/protocol.js'
 
 const SUBMIT_DAG_TOOL = 'submit_dag_plan'
 const REVIEW_DAG_TOOL = 'record_dag_review'
@@ -238,7 +240,11 @@ function reviewDue(state: FlashSearcherState, interval: number): boolean {
 const FLASH_SEARCHER_PROMPT = `Operate as Flash-Searcher. Advance all ready unresolved goals concurrently when their tool calls are independent. Within one goal, use one path at a time and move to a later path only when the current path fails, stalls, or misses its success criteria. Do not mark a goal complete without evidence. Record a DAG review whenever evidence changes a goal's status or active path so dependent goals can become ready, and whenever the current state requires a periodic review. DSH may execute up to five tool calls from one response concurrently; use those slots across different ready goals. Finalize only after every required goal is resolved.`
 
 /** Render the current DAG and review requirement from replayed state. */
-export function renderFlashSearcherContext(state: FlashSearcherState, interval: number): string {
+export function renderFlashSearcherContext(
+  state: FlashSearcherState,
+  interval: number,
+  mode: HarnessProtocolMode = 'strict',
+): string {
   if (state.goals === null) {
     return `Flash-Searcher state: no DAG has been accepted. Before using task tools, call ${SUBMIT_DAG_TOOL} with 1-5 goals. Give each goal a stable id, explicit dependencies, and 1-5 sequential fallback paths with success criteria. The dependencies must form a DAG.`
   }
@@ -255,7 +261,9 @@ export function renderFlashSearcherContext(state: FlashSearcherState, interval: 
     .map(item => `${item.goalId}: ${item.status}; path=${item.activePath ?? 'none'}; result=${item.result}; next=${item.nextAction}`)
     .join('\n')
   const periodic = reviewDue(state, interval)
-    ? `\n\nBefore another task action, call ${REVIEW_DAG_TOOL}. Report every goal, evidence-based status, active fallback path, result so far, and next action.`
+    ? mode === 'strict'
+      ? `\n\nBefore another task action, call ${REVIEW_DAG_TOOL}. Report every goal, evidence-based status, active fallback path, result so far, and next action.`
+      : `\n\nA DAG review is due. Call ${REVIEW_DAG_TOOL} soon with every goal, evidence-based status, active fallback path, result so far, and next action.`
     : ''
   return `Flash-Searcher state.\n\nReady goals: ${ready.join(', ') || '(none)'}\n\nDAG:\n${graph}\n\nLatest review:\n${review}${periodic}`
 }
@@ -326,6 +334,27 @@ function reviewDagTool(ctx: Context): ToolDefinition {
 /** Tunable periodic graph-review cadence. */
 export interface FlashSearcherConfig {
   readonly summaryInterval: number
+  readonly protocolMode: HarnessProtocolMode
+}
+
+function protocolPhase(state: FlashSearcherState, config: FlashSearcherConfig): HarnessProtocolPhase {
+  if (state.goals === null) return {
+    id: 'need-dag',
+    context: renderFlashSearcherContext(state, config.summaryInterval, config.protocolMode),
+    allowedTools: new Set([SUBMIT_DAG_TOOL]),
+    denial: `Call ${SUBMIT_DAG_TOOL} in a dedicated response before task tools.`,
+  }
+  if (reviewDue(state, config.summaryInterval) && config.protocolMode === 'strict') return {
+    id: 'need-dag-review',
+    context: renderFlashSearcherContext(state, config.summaryInterval, config.protocolMode),
+    allows: name => name === REVIEW_DAG_TOOL || name.startsWith('gam_'),
+    denial: `Call ${REVIEW_DAG_TOOL} in a dedicated response before the next task action.`,
+  }
+  return {
+    id: reviewDue(state, config.summaryInterval) ? 'dag-review-advised' : 'working',
+    context: renderFlashSearcherContext(state, config.summaryInterval, config.protocolMode),
+    deniedTools: new Set([SUBMIT_DAG_TOOL]),
+  }
 }
 
 /** Install DAG planning, replayable reviews, and execution guards. */
@@ -336,26 +365,13 @@ export function applyFlashSearcher(ctx: Context, config: FlashSearcherConfig): v
   ctx.sessionProjections.register(flashSearcherProjectionDefinition)
   ctx.tools.register(submitDagTool())
   ctx.tools.register(reviewDagTool(ctx))
-  ctx.tools.guard((exec) => {
-    if (exec.agent === undefined) return undefined
-    const state = ctx.sessionProjections.stateOf(exec.agent.session, FLASH_SEARCHER_PROJECTION_KEY)
-    if (state === undefined) return 'Flash-Searcher projection is unavailable'
-    if (state.goals === null) {
-      if (exec.name !== SUBMIT_DAG_TOOL) return `Call ${SUBMIT_DAG_TOOL} before task tools.`
-      return undefined
-    }
-    if (reviewDue(state, config.summaryInterval)) return exec.name === REVIEW_DAG_TOOL || exec.name.startsWith('gam_') ? undefined : `Call ${REVIEW_DAG_TOOL} before the next task action.`
-    if (exec.name === SUBMIT_DAG_TOOL) return 'The initial DAG is already fixed.'
-    return undefined
-  })
   registerHarnessPrompt(ctx, { id: 'flash-searcher', text: FLASH_SEARCHER_PROMPT })
-  registerHarnessContext(ctx, {
+  installHarnessProtocol(ctx, {
     id: 'flash-searcher',
-    text: ({ agent }) => {
-      if (agent === undefined) return ''
+    resolve: (agent) => {
       const state = ctx.sessionProjections.stateOf(agent.session, FLASH_SEARCHER_PROJECTION_KEY)
       if (state === undefined) throw new Error('Flash-Searcher projection is unavailable')
-      return renderFlashSearcherContext(state, config.summaryInterval)
+      return protocolPhase(state, config)
     },
   })
 }

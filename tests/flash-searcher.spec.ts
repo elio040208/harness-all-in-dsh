@@ -58,6 +58,8 @@ describe('Flash-Searcher Harness', () => {
       state = foldFlashSearcherState(state, event({ type: 'step/end', seq: step, time: 0, data: { turn: 1, step } }))
     }
     expect(renderFlashSearcherContext(state, 8)).toContain('call record_dag_review')
+    expect(renderFlashSearcherContext(state, 8, 'guided')).toContain('Call record_dag_review soon')
+    expect(renderFlashSearcherContext(state, 8, 'guided')).not.toContain('Before another task action')
 
     const review = [
       { goalId: 'facts', status: 'completed', activePath: 1, result: 'Primary facts collected.', nextAction: 'No action.' },

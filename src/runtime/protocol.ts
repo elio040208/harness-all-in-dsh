@@ -15,6 +15,8 @@ export interface HarnessProtocolPhase {
   readonly allowedTools?: ReadonlySet<string>
   /** Tool names hidden and denied while every other visible tool remains admitted. */
   readonly deniedTools?: ReadonlySet<string>
+  /** Harness-specific admission rule for compositional tool families. */
+  readonly allows?: (tool: string) => boolean
   /** Explanation returned only when the model calls a tool hidden by this phase. */
   readonly denial?: string
 }
@@ -39,6 +41,7 @@ function filterTools(assembly: PromptAssembly, phase: HarnessProtocolPhase): Pro
 function admits(phase: HarnessProtocolPhase, tool: string): boolean {
   return (phase.allowedTools === undefined || phase.allowedTools.has(tool))
     && phase.deniedTools?.has(tool) !== true
+    && (phase.allows === undefined || phase.allows(tool))
 }
 
 /**
