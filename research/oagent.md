@@ -10,13 +10,13 @@ English | [中文](oagent.zh.md)
 
 ## Defining behavior
 
-The fixed OAgent combines heterogeneous redundancy with an LLM critic. Its default ensemble runs one methodical Plan-and-Execute worker and two adaptive ReAct workers. Each expert receives fresh full history and the complete task-tool catalogue. A final critic sees each answer plus at most five bounded tool observations, evaluates compliance, evidence, logic, and specificity, then selects one named expert while optionally synthesizing a stronger final answer. Invalid critic output falls back to the first expert.
+The official BON path performs repeated independent runs of the same configured Agent. Each rollout starts from the same task state, creates its own initial planning step, and executes until it returns an answer or reaches the step limit. Rollouts run sequentially. The list-wise result merger receives every complete trajectory, selects one candidate index, and returns that rollout's answer without synthesizing a replacement. The reference GAIA command uses four rollouts.
 
 ## DSH implementation
 
-One model-facing composite tool runs the entire ensemble and concludes the coordinator turn. It starts three fresh DSH child Agents concurrently through the configured `spawn` provider, preserves their configured order for the critic, gives each its own persona and Session, and denies recursive access to the ensemble tool. The child route inherits the coordinator's provider and model.
+One model-facing composite tool runs the complete BON path and concludes the coordinator turn. It starts four same-configuration DSH child Agents sequentially through the configured `spawn` provider. Every rollout receives the same task and tools, uses a planning-first rollout persona, owns an isolated Session, and cannot recursively call the ensemble tool. The child route inherits the coordinator's provider and model.
 
-The shared Session-to-trajectory projection supplies each expert's final assistant content and the first five complete tool observations. The critic request uses the coordinator's current DSH model route through the shared auxiliary-LLM helper. The tool result persists the bounded critic input, child Session ids and stop reasons, provider/model, raw critic output, parse failure when present, selected expert, and final answer. A successful tool result concludes the parent turn. If the coordinator emits prose instead of invoking the tool, a bounded turn-stopping reminder gives it another opportunity without creating an unbounded loop.
+The shared Session-to-trajectory projection supplies each complete rollout and its final assistant content. The list-wise judge uses the coordinator's current DSH model route through the shared auxiliary-LLM helper and may return only a rollout number. The selected answer is copied unchanged from that rollout. The tool result persists the complete judge input records, child Session ids and stop reasons, provider/model, raw judge output, parse failure when present, selected rollout, and final answer. A successful tool result concludes the parent turn. If the coordinator emits prose instead of invoking the tool, a bounded turn-stopping reminder gives it another opportunity without creating an unbounded loop.
 
 ## Shared components
 
@@ -24,7 +24,6 @@ The shared Session-to-trajectory projection supplies each expert's final assista
 
 ## Intentional deviations
 
-- The official OAgents repository exposes general best-of-N and list-wise test-time scaling. This implementation uses one PE expert, two ReAct experts, and an evidence-aware JSON critic.
 - DSH isolates conversation state in child Sessions but does not overwrite or roll back the user's shared working tree; doing so inside a plugin could destroy unrelated or concurrent edits. Filesystem side effects therefore remain shared and are disclosed rather than silently reset.
 - Experts use native DSH tool calls and standard Agent loops instead of marker-delimited JSON actions and a nested Python loop.
-- The reference truncates evidence by characters. The shared DSH trajectory layer applies word-bounded truncation so Unicode text is not cut mid-codepoint.
+- The official runtime creates a dedicated planning message before each rollout. DSH expresses the same planning-first policy in the child persona while retaining the native Agent loop.

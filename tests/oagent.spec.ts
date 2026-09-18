@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { oagentExpertDigest, parseOAgentCriticVerdict } from '../src/index.js'
+import { oagentRollout, parseOAgentCriticVerdict } from '../src/index.js'
 import type { AgentTrajectory } from '../src/index.js'
 
 const trajectory: AgentTrajectory = {
@@ -15,26 +15,25 @@ const trajectory: AgentTrajectory = {
 }
 
 describe('OAgent Harness', () => {
-  it('builds the bounded critic view from native trajectory evidence', () => {
-    expect(oagentExpertDigest('PE-Worker-1', trajectory)).toEqual({
-      name: 'PE-Worker-1', answer: 'The answer is 42.',
-      evidence: [{ tool: 'search', observation: 'The source reports ALPHA=42.' }],
+  it('builds the complete list-wise trajectory record', () => {
+    expect(oagentRollout(1, trajectory)).toEqual({
+      rollout: 1, answer: 'The answer is 42.',
+      trajectory: '[1] assistant: \nTool call search: {"q":"alpha"}\n\n[2] tool search: The source reports ALPHA=42.\n\n[3] assistant: The answer is 42.',
       sessionId: 'expert-session', stopReason: 'completed',
     })
   })
 
-  it('accepts exact critic JSON and rejects unknown experts', () => {
-    const experts = [oagentExpertDigest('PE-Worker-1', trajectory)]
-    expect(parseOAgentCriticVerdict('```json\n{"selected_expert":"PE-Worker-1","answer":"42"}\n```', experts))
-      .toEqual({ selectedExpert: 'PE-Worker-1', answer: '42' })
-    expect(() => parseOAgentCriticVerdict('{"selected_expert":"missing","answer":"42"}', experts)).toThrow(/existing expert/u)
+  it('selects an existing rollout without rewriting its answer', () => {
+    const rollouts = [oagentRollout(1, trajectory)]
+    expect(parseOAgentCriticVerdict('```json\n{"selected_rollout":1}\n```', rollouts))
+      .toEqual({ selectedRollout: 1, answer: 'The answer is 42.' })
+    expect(() => parseOAgentCriticVerdict('{"selected_rollout":2}', rollouts)).toThrow(/existing rollout/u)
   })
 
-  it('configures the fixed one-PE two-ReAct ensemble', () => {
+  it('configures the documented four-rollout BON path', () => {
     const profile = readFileSync(new URL('../profiles/oagent.cordis.patch.yml', import.meta.url), 'utf8')
     expect(profile).toContain('harness: oagent')
-    expect(profile).toContain('peWorkerCount: 1')
-    expect(profile).toContain('reactWorkerCount: 2')
+    expect(profile).toContain('rolloutCount: 4')
     expect(profile).toContain('controllerReminderLimit: 2')
   })
 })

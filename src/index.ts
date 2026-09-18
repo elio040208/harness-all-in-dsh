@@ -61,8 +61,8 @@ export {
 export type { AgentTrajectory, TrajectoryStep } from './runtime/trajectory.js'
 export { runIsolatedAgent } from './runtime/subagent-ensemble.js'
 export type { IsolatedAgentRequest } from './runtime/subagent-ensemble.js'
-export { applyOAgent, oagentExpertDigest, parseOAgentCriticVerdict } from './harnesses/oagent.js'
-export type { OAgentConfig, OAgentCriticVerdict, OAgentExpertDigest } from './harnesses/oagent.js'
+export { applyOAgent, oagentRollout, parseOAgentCriticVerdict } from './harnesses/oagent.js'
+export type { OAgentConfig, OAgentCriticVerdict, OAgentRollout } from './harnesses/oagent.js'
 export {
   AGENTFOLD_PROJECTION_KEY,
   agentFoldProjectionDefinition,

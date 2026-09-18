@@ -1,3 +1,3 @@
 name: Harness · OAgent
-description: 运行异构专家路径，并由 critic 选择或综合结果。
+description: 顺序运行同配置的独立 rollout，并由 list-wise judge 选择结果。
 order: 108

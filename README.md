@@ -25,9 +25,9 @@ The project currently provides 13 fixed Harnesses. Original papers and official 
 | GAM | Searchable memory pages and research integration | Durable page projection and retrieval tools |
 | MemoBrain | Dependency-aware reasoning graph with flush and fold | Graph projection and surface replacement |
 | AggAgent | Independent rollouts and evidence-first aggregation | Isolated child Sessions and trajectory tools |
-| OAgent | Heterogeneous experts and critic selection | Parallel child-Agent ensemble and logged critic result |
+| OAgent | Best-of-N repeated reasoning and list-wise selection | Sequential child rollouts and logged judge result |
 | AgentFold | Model-directed folding of trajectory ranges | Fold tool and replayable summaries |
-| HiAgent | Hierarchical, value-sampled working memory | Full Session history with sampled model surface |
+| HiAgent | Value-sampled trajectory memory | Full Session history with sampled model surface |
 | DeepAgent | Three-tier memory folding and tool search | Memory tools and catalogue search |
 | ROMA | Recursive atomize-plan-execute-aggregate control | Recursive child Sessions and dependency DAGs |
 | AOrchestra | Runtime-selected instruction, context, tools, and model | Configurable child-Agent controller |
@@ -48,8 +48,6 @@ Create a new Session and choose one of the modes whose name starts with `Harness
 The presets share Shell, filesystem, search, Skill, and user-question tools. Planning, memory, folding, compaction, and child-Agent behavior come only from the selected Harness. The Web process owns the deployment-wide parallel tool-call limit, so a preset does not override that setting.
 
 Harness tools remain visible throughout a Session, so planning and memory state changes do not rewrite the model-facing tool catalogue. Plan-and-Execute and Flash-Searcher allow workspace inspection and fact gathering before the initial plan; periodic reviews and GAM maintenance are model-visible recommendations. Coordinator Harnesses still reject ordinary task tools because those actions belong to their child Agents. Admission decisions are frozen for one model response, and protocol denials remain in the Session log for diagnostics but do not become task evidence, memory, trajectory entries, or progress counts.
-
-Every mode also shares one stable execution policy. After the same recoverable tool failure occurs twice, a replayable next-step message advises the root or child Agent to change method or finish from adequate evidence. This advice never hides tools, blocks exploratory reads, or changes the system prompt or tool catalogue.
 
 ## Run a Harness from the command line
 

@@ -13,8 +13,6 @@ import { applyPlanAndExecute } from './harnesses/plan-and-execute.js'
 import { applyReact } from './harnesses/react.js'
 import { applyReSum } from './harnesses/resum.js'
 import { applyRoma } from './harnesses/roma.js'
-import { installExecutionDiscipline } from './runtime/execution-discipline.js'
-import { EXECUTION_DISCIPLINE_PROMPT, registerHarnessPrompt } from './runtime/prompt.js'
 
 /** Cordis loader name for the fixed-harness selector plugin. */
 export const name = 'harness-all-in-dsh'
@@ -31,8 +29,6 @@ export interface Config {
   readonly auxiliaryMaxTokens?: number
   readonly rolloutCount?: number
   readonly subagentProvider?: string
-  readonly peWorkerCount?: number
-  readonly reactWorkerCount?: number
   readonly criticMaxTokens?: number
   readonly controllerReminderLimit?: number
   readonly hiAgentMemorySize?: number
@@ -55,8 +51,6 @@ export const Config: z<Config> = z.object({
   auxiliaryMaxTokens: z.number().default(8192),
   rolloutCount: z.number().default(4),
   subagentProvider: z.string().default('spawn'),
-  peWorkerCount: z.number().default(1),
-  reactWorkerCount: z.number().default(2),
   criticMaxTokens: z.number().default(4096),
   controllerReminderLimit: z.number().default(2),
   hiAgentMemorySize: z.number().default(15),
@@ -77,8 +71,6 @@ export const Config: z<Config> = z.object({
  * @param config - Validated fixed-Harness selection.
  */
 export function apply(ctx: Context, config: Config): void {
-  registerHarnessPrompt(ctx, { id: 'execution-discipline', text: EXECUTION_DISCIPLINE_PROMPT })
-  installExecutionDiscipline(ctx)
   switch (config.harness ?? 'react') {
     case 'react':
       applyReact(ctx)
@@ -114,8 +106,7 @@ export function apply(ctx: Context, config: Config): void {
     case 'oagent':
       ctx.inject(['subagents', 'llm'], ready => {
         applyOAgent(ready, {
-          peWorkers: config.peWorkerCount ?? 1,
-          reactWorkers: config.reactWorkerCount ?? 2,
+          rolloutCount: config.rolloutCount ?? 4,
           provider: config.subagentProvider ?? 'spawn',
           criticMaxTokens: config.criticMaxTokens ?? 4096,
           controllerReminderLimit: config.controllerReminderLimit ?? 2,

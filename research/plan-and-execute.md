@@ -13,7 +13,7 @@ The original Plan-and-Act system separates a planner from an executor. The plann
 
 ## DSH implementation
 
-The implementation keeps DSH's Agent loop and full Session history. The first model step must call `submit_plan` with 3-7 ordered steps; a tool guard blocks task tools until that succeeds. The successful tool call and result are ordinary durable Session events. A host projection folds those events into the active roadmap, counts completed action steps, and restores the same state on resume. At the configured interval (eight by default), the guard requires `record_progress` before another task action. A runtime-context snapshot renders the replayed roadmap and latest summary only when that state changes; the system policy remains stable.
+The implementation keeps DSH's Agent loop and full Session history. The model calls `submit_plan` early with 3-7 ordered steps after any task inspection needed to make the roadmap concrete. The successful tool call and result are ordinary durable Session events. A host projection folds those events into the active roadmap, counts completed action steps, and restores the same state on resume. At the configured interval (eight by default), runtime context advises `record_progress`; task tools remain callable. A runtime-context snapshot renders the replayed roadmap and latest summary only when that state changes; the system policy remains stable.
 
 ## Shared components
 
@@ -23,5 +23,6 @@ Plan-and-Execute reuses the prompt registration helper introduced by ReAct and t
 
 - Planner and executor use the same configured DSH model rather than separately trained planner and actor checkpoints.
 - Structured DSH tool calls replace tagged text or JSON repair. Invalid roadmap and summary arguments fail through tool validation and remain visible as tool errors.
-- The roadmap call sees the normal DSH tool schemas. A guard enforces the planner/executor phase boundary even though schemas remain stable for request-cache compatibility.
+- The original planner runs before the executor. DSH permits task inspection before roadmap submission because filesystem and repository tasks often require observations before a concrete plan can be written; this weakens the original phase boundary but keeps the tool catalogue stable.
+- The original planner/executor controller owns progress updates. DSH represents periodic progress as an advised logged tool call instead of blocking another task action when the model omits it.
 - The global step limit remains deployment-owned; this adapter does not force an answer after a fixed count.

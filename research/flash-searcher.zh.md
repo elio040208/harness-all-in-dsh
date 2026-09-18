@@ -16,9 +16,9 @@ Flash-Searcher 先通过专用 planning call 把任务拆成 1–5 个 goal，�
 
 ## DSH 实现
 
-模型必须先调用 `submit_dag_plan`。结构化图包含稳定 goal id、显式依赖和有序 fallback path。验证会拒绝重复 id、缺失依赖、重复依赖、自依赖和环。Session projection 只在工具成功后提交图，并在回放时重建。Runtime-context snapshot 根据依赖完成情况计算 ready goal，并显示每条 path 的成功条件，不改变 system policy。
+模型可先完成定义具体 goal 所需的任务检查，再尽早调用 `submit_dag_plan`。结构化图包含稳定 goal id、显式依赖和有序 fallback path。验证会拒绝重复 id、缺失依赖、重复依赖、自依赖和环。Session projection 只在工具成功后提交图，并在回放时重建。Runtime-context snapshot 根据依赖完成情况计算 ready goal，并显示每条 path 的成功条件，不改变 system policy。
 
-Headless profile 把 `agent-loop.maxParallelToolCalls` 设为 5。模型可在一次回复中为不同 ready goal 发出独立 call，DSH 并发调度并保持持久 call/result 配对。`record_dag_review` 记录 goal 状态和 active path 转换；达到配置间隔时，guard 要求完整图 review。
+Headless profile 把 `agent-loop.maxParallelToolCalls` 设为 5。模型可在一次回复中为不同 ready goal 发出独立 call，DSH 并发调度并保持持久 call/result 配对。`record_dag_review` 记录 goal 状态和 active path 转换；达到配置间隔时，runtime context 建议完整图 review，但不会阻止任务工具。
 
 ## 共享组件
 
@@ -28,5 +28,6 @@ Headless profile 把 `agent-loop.maxParallelToolCalls` 设为 5。模型可在�
 
 - 结构化 DSH 参数取代自由格式 Markdown plan，使依赖和回放状态可由程序验证。
 - 周期 review 通过模型可见、持久化的工具调用完成，而不是私有模型请求。
+- DSH 允许在提交 DAG 前检查任务，并以建议代替强制周期 review。这支持需要先读取文件系统证据才能定义 dependency graph 的任务，也避免用协议错误替换任务 observation，但比参考 controller 的专用 planning/review call 更弱。
 - DSH 并发执行独立 call；固定 revision 的公开 Python 入口默认顺序执行。
 - 全局步数和 forced-answer 策略由部署管理。

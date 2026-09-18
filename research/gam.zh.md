@@ -14,9 +14,9 @@ GAM 把轻量记忆和无损历史分开。Memorizer 为每个输入生成简短
 
 ## DSH 实现
 
-GAM 组合现有 Flash-Searcher controller，不复制 DAG planner。每个非管理工具结果都会成为完整、由 Session 派生的 page。下一次任务 action 前，`gam_memorize_pages` 要求模型为每个新 page 写一个事实性、自包含 abstract。Page id 和 abstract catalogue 都是从工具 call/result 重建的持久 projection state。
+GAM 组合现有 Flash-Searcher controller，不复制 DAG planner。每个非管理工具结果都会成为完整、由 Session 派生的 page。新 page 缺少 abstract 时，runtime context 会建议调用 `gam_memorize_pages`，为每个 pending page 提交一个事实性、自包含 abstract，但不会阻止普通任务工具。Page id 和 abstract catalogue 都是从工具 call/result 重建的持久 projection state。
 
-每四个 action step，task tool 暂停，模型执行一次 memory integration。`gam_search_pages` 支持对完整内容进行精确关键词和 page id 检索；`gam_integrate_memory` 保存整合结果及其来源 page id。随后插件把完整非 system surface 替换为包含原始任务和 integrated memory 的用户 checkpoint。原始 Session event 和 page projection 仍可用于回放和后续检索。
+每四个 action step，runtime context 会建议执行一次 memory integration。`gam_search_pages` 支持对完整内容进行精确关键词和 page id 检索；`gam_integrate_memory` 保存整合结果及其来源 page id。维护 pending 时普通任务工具仍可使用。随后插件把完整非 system surface 替换为包含原始任务和 integrated memory 的用户 checkpoint。原始 Session event 和 page projection 仍可用于回放和后续检索。
 
 ## 共享组件
 
@@ -26,5 +26,5 @@ GAM 复用 Flash-Searcher 的 DAG、review projection、prompt registry 和五�
 
 - 原始 dense channel 使用 sentence-transformer 和 FAISS；本 TypeScript bundle 保持无额外依赖，只提供精确关键词和 page id 检索。
 - 原始 Researcher 最多执行三轮私有 LLM plan/search/integrate/reflect；DSH 把 search 和 integration 暴露为日志工具，所有模型可见决策均可回放。
-- 原实现通过独立 Memorizer call 生成 abstract；DSH 要求会话模型观察完整结果后，通过 guarded tool 写入 abstract。
+- 原实现通过独立 Memorizer call 生成 abstract；DSH 建议会话模型观察完整结果后，通过持久 tool call 写入 abstract，维护不会成为任务工具的硬门槛。
 - DSH integration checkpoint 不保留 raw tail；旧证据仍可从持久 page projection 精确查询。

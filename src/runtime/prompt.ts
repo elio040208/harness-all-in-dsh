@@ -14,9 +14,6 @@ export interface HarnessContext {
   readonly text: string | ((context: AssembleContext) => string)
 }
 
-/** Stable recovery and completion policy shared by root and child Agents. */
-export const EXECUTION_DISCIPLINE_PROMPT = `Treat failed task-tool results as observations about that method, not as evidence about the task answer. Do not repeat an identical failed call unless relevant state has changed. After the same tool, target, or route fails twice, change the tool, source, query, or strategy. Track the task's explicit success criteria; once they are supported by adequate evidence, stop using tools and return the result. Seek more confirmation only when it can resolve a material uncertainty.`
-
 /**
  * Register one fixed Harness policy in the shared system-prompt registry.
  *

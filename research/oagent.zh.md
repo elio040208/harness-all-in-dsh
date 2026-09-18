@@ -10,15 +10,13 @@
 
 ## 定义行为
 
-固定 OAgent 使用异构冗余和 LLM critic。默认 ensemble 包含一个 Plan-and-Execute worker 和两个 ReAct worker。每个专家使用全新 full history 和完整任务工具目录。Final critic 接收每个答案和最多五条有界工具 observation，评估任务符合度、证据、逻辑和具体性，选择一个命名专家，并可综合更强答案。Critic 输出无效时回退到第一个专家。
-
-一个模型可见的复合工具并发启动三个独立的 DSH 子 Agent，并按配置顺序把结果交给 critic。每个专家拥有独立 Session 和 persona，不能递归调用 ensemble 工具；子 Agent 继承协调器的 provider 和 model。
+官方 BON 路径会使用相同配置的 Agent 重复独立执行。每条 rollout 从相同任务状态开始，先创建自己的初始规划步骤，再执行到返回答案或达到步数上限。各 rollout 顺序运行。List-wise result merger 接收每条完整轨迹，只选择一个候选编号，并原样返回该 rollout 的答案，不综合替代答案。官方 GAIA 命令使用四条 rollout。
 
 ## DSH 实现
 
-一个模型可见 composite tool 运行完整 ensemble 并结束 coordinator turn。它通过 `spawn` provider 顺序启动三个新 DSH 子 Agent，为每个子任务分配独立 persona 和 Session，并禁止递归调用 ensemble tool。子任务继承 coordinator 的 provider 和 model。
+一个模型可见 composite tool 运行完整 BON 路径并结束 coordinator turn。它通过 `spawn` provider 顺序启动四个同配置 DSH 子 Agent。每条 rollout 获得相同任务和工具，使用规划优先的 rollout persona，拥有独立 Session，并禁止递归调用 ensemble tool。子任务继承 coordinator 的 provider 和 model。
 
-共享 trajectory projection 提供 final assistant content 和前五个完整 tool observation。Critic 通过共享 auxiliary-LLM helper 使用 coordinator 当前模型路由。Tool result 持久化 bounded critic input、子 Session id、stop reason、provider/model、raw output、parse failure、选中专家和 final answer。Coordinator 未调用工具而输出 prose 时，有界 reminder 会再次提示，不会形成无限 loop。
+共享 trajectory projection 提供每条完整 rollout 及其 final assistant content。List-wise judge 通过共享 auxiliary-LLM helper 使用 coordinator 当前模型路由，并且只能返回 rollout 编号。最终答案从选中 rollout 原样复制。Tool result 持久化完整 judge 输入记录、子 Session id、stop reason、provider/model、raw output、parse failure、选中 rollout 和 final answer。Coordinator 未调用工具而输出 prose 时，有界 reminder 会再次提示，不会形成无限 loop。
 
 ## 共享组件
 
@@ -26,7 +24,6 @@
 
 ## 有意差异
 
-- 官方 OAgents 支持通用 best-of-N 和 list-wise test-time scaling；本实现采用一个 PE 专家、两个 ReAct 专家和 evidence-aware JSON critic 的固定组合。
 - DSH 隔离子 Session 的会话状态，但不会覆盖或回滚用户共享 working tree，避免破坏无关或并发修改。Filesystem side effect 因此仍然共享并显式公开。
-- 专家使用原生 DSH tool call 和标准 Agent loop，不使用 marker JSON action 和嵌套 Python loop。
-- 参考实现按字符截断 evidence；共享 DSH trajectory 按单词限制，避免在 Unicode codepoint 中间截断。
+- Rollout 使用原生 DSH tool call 和标准 Agent loop，不使用 marker JSON action 和嵌套 Python loop。
+- 官方运行时会在每条 rollout 前创建专用 planning message；DSH 通过子 Agent 的规划优先 persona 表达相同策略，并保留原生 Agent loop。

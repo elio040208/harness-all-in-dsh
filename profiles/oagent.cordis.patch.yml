@@ -3,8 +3,7 @@
       name: harness-all-in-dsh
       config:
         harness: oagent
-        peWorkerCount: 1
-        reactWorkerCount: 2
+        rolloutCount: 4
         subagentProvider: spawn
         criticMaxTokens: 4096
         controllerReminderLimit: 2

@@ -204,7 +204,7 @@ function requireAgent(exec: ToolExecution, toolName: string): Agent {
 function submitPlanTool(): ToolDefinition {
   return {
     name: SUBMIT_PLAN_TOOL,
-    description: 'Submit the initial ordered 3-7 step roadmap before executing task tools.',
+    description: 'Submit the initial ordered 3-7 step roadmap early, after any inspection needed to make it concrete.',
     parameters: {
       type: 'object',
       additionalProperties: false,

@@ -16,9 +16,9 @@ The paper describes a dependency DAG and aggressive parallel scheduling. The pub
 
 ## DSH implementation
 
-The planning model must call `submit_dag_plan` before task tools. Its structured graph contains stable goal ids, explicit dependencies, and ordered fallback paths. Validation rejects duplicate ids, missing dependencies, repeated or self dependencies, and cycles. A Session projection commits the graph only after the tool succeeds and reconstructs it on replay. A runtime-context snapshot derives ready goals from dependency completion and shows every path's success criterion without changing the system policy.
+The model calls `submit_dag_plan` early after any task inspection needed to define concrete goals. Its structured graph contains stable goal ids, explicit dependencies, and ordered fallback paths. Validation rejects duplicate ids, missing dependencies, repeated or self dependencies, and cycles. A Session projection commits the graph only after the tool succeeds and reconstructs it on replay. A runtime-context snapshot derives ready goals from dependency completion and shows every path's success criterion without changing the system policy.
 
-The profile raises `agent-loop.maxParallelToolCalls` to five. The model may therefore emit independent calls for different ready goals in one response, and DSH schedules them concurrently while preserving durable call/result pairing. `record_dag_review` records every goal after a status or active-path transition so completed prerequisites unlock dependents. Every configured eight action steps, the tool guard makes that complete graph review mandatory before another task action. A successful review updates the ready set and the current per-goal directive.
+The profile raises `agent-loop.maxParallelToolCalls` to five. The model may therefore emit independent calls for different ready goals in one response, and DSH schedules them concurrently while preserving durable call/result pairing. `record_dag_review` records every goal after a status or active-path transition so completed prerequisites unlock dependents. Every configured eight action steps, runtime context advises a complete graph review without blocking task tools. A successful review updates the ready set and the current per-goal directive.
 
 ## Shared components
 
@@ -28,5 +28,6 @@ The profile raises `agent-loop.maxParallelToolCalls` to five. The model may ther
 
 - Structured DSH tool arguments replace the original free-form Markdown plan, making graph dependencies and replay state machine-checkable.
 - Periodic review is emitted through a guarded model-visible tool call rather than an extra private model request. The review and its acceptance are therefore explicit Session events.
+- DSH permits task inspection before DAG submission and advises rather than forces periodic reviews. This supports tasks whose dependency graph requires initial filesystem evidence and avoids replacing task observations with protocol errors, but it is weaker than the reference controller's dedicated planning and review calls.
 - DSH executes independent calls concurrently; the pinned public Python entry point executes them sequentially unless its commented parallel block is enabled.
 - The deployment owns the global step limit and forced-answer policy.
