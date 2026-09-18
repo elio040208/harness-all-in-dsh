@@ -29,6 +29,19 @@ describe('Plan-and-Execute Harness', () => {
     expect(renderPlanAndExecuteContext(state, 8)).toContain('1. Inspect\n2. Change\n3. Verify')
   })
 
+  it('accepts a task-sized roadmap without an invented item-count cap', () => {
+    let state = initialLinearPlanState()
+    state = foldLinearPlanState(state, event({
+      type: 'tool/call', seq: 0, time: 0,
+      data: { turn: 1, step: 1, callId: 'plan-1', name: 'submit_plan', arguments: JSON.stringify({ steps: ['Answer the atomic task'] }) },
+    }))
+    state = foldLinearPlanState(state, event({
+      type: 'tool/result', seq: 1, time: 0,
+      data: { turn: 1, step: 1, message: { content: [{ type: 'tool-result', toolCallId: 'plan-1', content: [], isError: false }] } },
+    }))
+    expect(state.plan).toEqual(['Answer the atomic task'])
+  })
+
   it('requests a durable progress review at the configured interval', () => {
     let state: LinearPlanState = { ...initialLinearPlanState(), plan: ['Inspect', 'Change', 'Verify'] }
     for (let step = 1; step <= 8; step += 1) {

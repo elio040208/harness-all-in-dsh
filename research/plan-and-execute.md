@@ -13,7 +13,7 @@ The original Plan-and-Act system separates a planner from an executor. The plann
 
 ## DSH implementation
 
-The implementation keeps DSH's Agent loop and full Session history. The model calls `submit_plan` early with 3-7 ordered steps after any task inspection needed to make the roadmap concrete. The successful tool call and result are ordinary durable Session events. A host projection folds those events into the active roadmap, counts completed action steps, and restores the same state on resume. At the configured interval (eight by default), runtime context advises `record_progress`; task tools remain callable. A runtime-context snapshot renders the replayed roadmap and latest summary only when that state changes; the system policy remains stable.
+The implementation keeps DSH's Agent loop and full Session history. The model calls `submit_plan` early with a detailed ordered roadmap after any task inspection needed to make it concrete. The official planner does not impose a fixed number of roadmap items, so the tool accepts any non-empty sequence. The successful tool call and result are ordinary durable Session events. A host projection folds those events into the active roadmap, counts completed action steps, and restores the same state on resume. At the configured interval (eight by default), runtime context advises `record_progress`; task tools remain callable. A runtime-context snapshot renders the replayed roadmap and latest summary only when that state changes; the system policy remains stable.
 
 ## Shared components
 

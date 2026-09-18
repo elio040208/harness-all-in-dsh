@@ -13,7 +13,7 @@
 
 ## DSH 实现
 
-实现保留 DSH Agent loop 和完整 Session 历史。模型可先完成制定具体 roadmap 所需的任务检查，再尽早调用 `submit_plan` 提交 3–7 个有序步骤。成功 call 和 result 作为普通 Session 事件持久化。Host projection 从这些事件恢复当前 roadmap、执行步数和 resume 状态。达到配置间隔时，runtime context 建议调用 `record_progress`，但任务工具仍可使用。Runtime-context snapshot 只在状态变化时呈现回放得到的 roadmap 和最新摘要，system policy 保持稳定。
+实现保留 DSH Agent loop 和完整 Session 历史。模型可先完成制定具体 roadmap 所需的任务检查，再尽早调用 `submit_plan` 提交详细的有序 roadmap。官方 planner 不限制 roadmap 条目数，因此该工具接受任意非空步骤序列。成功 call 和 result 作为普通 Session 事件持久化。Host projection 从这些事件恢复当前 roadmap、执行步数和 resume 状态。达到配置间隔时，runtime context 建议调用 `record_progress`，但任务工具仍可使用。Runtime-context snapshot 只在状态变化时呈现回放得到的 roadmap 和最新摘要，system policy 保持稳定。
 
 ## 共享组件
 

@@ -63,7 +63,7 @@ function nonEmptyString(value: unknown): value is string {
 function stepsFromArguments(value: unknown): readonly string[] | undefined {
   if (typeof value !== 'object' || value === null || !('steps' in value)) return undefined
   const steps = (value as { steps?: unknown }).steps
-  if (!Array.isArray(steps) || steps.length < 3 || steps.length > 7 || !steps.every(nonEmptyString)) return undefined
+  if (!Array.isArray(steps) || steps.length < 1 || !steps.every(nonEmptyString)) return undefined
   return steps.map(step => step.trim())
 }
 
@@ -167,7 +167,7 @@ export function renderPlanAndExecuteContext(
   interval: number,
 ): string {
   if (state.plan === null) {
-    return `Plan-and-Execute state: no roadmap has been accepted. Call ${SUBMIT_PLAN_TOOL} early with a 3-7 step ordered roadmap. You may first use task tools to inspect the workspace or gather facts needed to make the roadmap concrete. Each step must be specific and actionable, later steps must build on earlier results, and a verification step must appear near the end.`
+    return `Plan-and-Execute state: no roadmap has been accepted. Call ${SUBMIT_PLAN_TOOL} early with a detailed ordered roadmap. You may first use task tools to inspect the workspace or gather facts needed to make the roadmap concrete. Each step must be specific and actionable, later steps must build on earlier results, and verification should appear where the task requires it.`
   }
   const plan = state.plan.map((step, index) => `${index + 1}. ${step}`).join('\n')
   const summary = state.latestSummary === null ? '' : `\n\nLatest progress summary:\n${state.latestSummary}`
@@ -204,12 +204,12 @@ function requireAgent(exec: ToolExecution, toolName: string): Agent {
 function submitPlanTool(): ToolDefinition {
   return {
     name: SUBMIT_PLAN_TOOL,
-    description: 'Submit the initial ordered 3-7 step roadmap early, after any inspection needed to make it concrete.',
+    description: 'Submit the initial detailed ordered roadmap early, after any inspection needed to make it concrete.',
     parameters: {
       type: 'object',
       additionalProperties: false,
       properties: {
-        steps: { type: 'array', minItems: 3, maxItems: 7, items: { type: 'string' } },
+        steps: { type: 'array', minItems: 1, items: { type: 'string' } },
       },
       required: ['steps'],
     },
@@ -228,7 +228,7 @@ function submitPlanTool(): ToolDefinition {
     async execute(args, exec) {
       requireAgent(exec, SUBMIT_PLAN_TOOL)
       const steps = stepsFromArguments(args)
-      if (steps === undefined) throw new Error('submit_plan requires 3-7 non-empty steps')
+      if (steps === undefined) throw new Error('submit_plan requires at least one non-empty step')
       return { steps }
     },
   }
