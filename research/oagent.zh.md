@@ -12,6 +12,8 @@
 
 固定 OAgent 使用异构冗余和 LLM critic。默认 ensemble 包含一个 Plan-and-Execute worker 和两个 ReAct worker。每个专家使用全新 full history 和完整任务工具目录。Final critic 接收每个答案和最多五条有界工具 observation，评估任务符合度、证据、逻辑和具体性，选择一个命名专家，并可综合更强答案。Critic 输出无效时回退到第一个专家。
 
+一个模型可见的复合工具并发启动三个独立的 DSH 子 Agent，并按配置顺序把结果交给 critic。每个专家拥有独立 Session 和 persona，不能递归调用 ensemble 工具；子 Agent 继承协调器的 provider 和 model。
+
 ## DSH 实现
 
 一个模型可见 composite tool 运行完整 ensemble 并结束 coordinator turn。它通过 `spawn` provider 顺序启动三个新 DSH 子 Agent，为每个子任务分配独立 persona 和 Session，并禁止递归调用 ensemble tool。子任务继承 coordinator 的 provider 和 model。

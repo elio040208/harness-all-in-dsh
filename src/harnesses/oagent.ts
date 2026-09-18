@@ -104,9 +104,8 @@ async function runExperts(
   config: OAgentConfig,
   signal: AbortSignal,
 ): Promise<readonly OAgentExpertDigest[]> {
-  const digests: OAgentExpertDigest[] = []
   const specs = workerSpecs(config)
-  for (const [index, spec] of specs.entries()) {
+  return await Promise.all(specs.map(async (spec, index) => {
     const trajectory = await runIsolatedAgent(ctx, {
       id: index + 1,
       label: spec.name,
@@ -117,9 +116,8 @@ async function runExperts(
       parent,
       signal,
     })
-    digests.push(oagentExpertDigest(spec.name, trajectory))
-  }
-  return digests
+    return oagentExpertDigest(spec.name, trajectory)
+  }))
 }
 
 function runTool(ctx: Context, config: OAgentConfig, completed: WeakSet<Agent>): ToolDefinition {

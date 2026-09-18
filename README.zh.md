@@ -25,7 +25,7 @@
 | GAM | 可检索记忆页和研究整合 | 持久 page 投影和检索工具 |
 | MemoBrain | 可 flush、fold 的依赖感知推理图 | Graph 投影和 surface replacement |
 | AggAgent | 独立 rollout 和证据优先聚合 | 隔离子 Session 和轨迹工具 |
-| OAgent | 异构专家和 critic 选择 | 子 Agent ensemble 和持久 critic 结果 |
+| OAgent | 异构专家和 critic 选择 | 并发子 Agent ensemble 和持久 critic 结果 |
 | AgentFold | 模型主动折叠轨迹区间 | Fold 工具和可回放摘要 |
 | HiAgent | 分层、价值采样的工作记忆 | 完整 Session 历史和采样后的模型 surface |
 | DeepAgent | 三层记忆 fold 和工具搜索 | 记忆工具和工具目录搜索 |
@@ -48,6 +48,8 @@ dsh web
 这些 preset 共享 Shell、文件、搜索、Skill 和用户提问工具。计划、记忆、折叠、压缩和子 Agent 行为只由所选 Harness 提供。Web 进程统一管理部署级工具调用并发上限，因此 preset 不会覆盖该设置。
 
 Harness 工具在整个 Session 中始终可见，因此规划和记忆状态变化不会改写模型看到的工具目录。Plan-and-Execute 和 Flash-Searcher 允许模型在提交初始计划前检查工作区或收集规划所需事实；周期复查和 GAM 维护是模型可见的建议。协调器 Harness 仍会拒绝普通任务工具，因为这些动作属于其子 Agent。准入判断在一次模型响应内保持不变；协议拒绝会留在 Session 日志中供诊断，但不会进入任务证据、记忆、轨迹或进度计数。
+
+所有模式还共享一条稳定的执行策略：同一种可恢复工具错误出现两次后，系统会用可回放的下一步消息建议根 Agent 或子 Agent 更换方法，或者基于充分证据结束任务。该建议不会隐藏工具、阻止探索性读取，也不会改变系统提示词或工具目录。
 
 ## 从命令行运行
 

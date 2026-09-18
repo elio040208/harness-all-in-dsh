@@ -14,7 +14,7 @@ The fixed OAgent combines heterogeneous redundancy with an LLM critic. Its defau
 
 ## DSH implementation
 
-One model-facing composite tool runs the entire ensemble and concludes the coordinator turn. It starts three fresh DSH child Agents sequentially through the configured `spawn` provider, gives each its own persona and Session, and denies recursive access to the ensemble tool. The child route inherits the coordinator's provider and model.
+One model-facing composite tool runs the entire ensemble and concludes the coordinator turn. It starts three fresh DSH child Agents concurrently through the configured `spawn` provider, preserves their configured order for the critic, gives each its own persona and Session, and denies recursive access to the ensemble tool. The child route inherits the coordinator's provider and model.
 
 The shared Session-to-trajectory projection supplies each expert's final assistant content and the first five complete tool observations. The critic request uses the coordinator's current DSH model route through the shared auxiliary-LLM helper. The tool result persists the bounded critic input, child Session ids and stop reasons, provider/model, raw critic output, parse failure when present, selected expert, and final answer. A successful tool result concludes the parent turn. If the coordinator emits prose instead of invoking the tool, a bounded turn-stopping reminder gives it another opportunity without creating an unbounded loop.
 
