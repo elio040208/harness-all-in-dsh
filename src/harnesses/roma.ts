@@ -13,12 +13,16 @@ import { trajectoryFinalAnswer } from '../runtime/trajectory.js'
 
 const RUN_TOOL = 'roma_solve'
 const ROMA_SOURCE = 'harness-all-in-dsh:roma'
+const ROMA_TASK_TYPES = ['RETRIEVE', 'WRITE', 'THINK', 'CODE_INTERPRET', 'IMAGE_GENERATION'] as const
+
+/** The five task classifications used by ROMA planners and executors. */
+export type RomaTaskType = typeof ROMA_TASK_TYPES[number]
 
 /** One dependency-aware subtask returned by the ROMA planner. */
 export interface RomaPlannedTask {
   readonly id: string
   readonly goal: string
-  readonly taskType: string
+  readonly taskType: RomaTaskType
   readonly dependsOn: readonly string[]
 }
 
@@ -28,10 +32,9 @@ export interface RomaNode {
   readonly parentId: string | null
   readonly depth: number
   readonly goal: string
-  readonly taskType: string
+  readonly taskType: RomaTaskType
   readonly decision: 'execute' | 'plan'
   readonly forcedExecution: boolean
-  readonly decisionReason: string
   readonly plan: readonly RomaPlannedTask[]
   readonly children: readonly RomaNode[]
   readonly result: string
@@ -53,8 +56,7 @@ export interface RomaConfig {
 
 interface AtomizerDecision {
   readonly isAtomic: boolean
-  readonly taskType: string
-  readonly reason: string
+  readonly nodeType: 'execute' | 'plan'
 }
 
 interface NodeBudget { nextId: number; count: number }
@@ -72,9 +74,15 @@ function record(value: unknown, message: string): Record<string, unknown> {
 export function parseRomaAtomizer(text: string): AtomizerDecision {
   const value = record(JSON.parse(cleanJson(text)) as unknown, 'ROMA atomizer response must be an object')
   if (typeof value.is_atomic !== 'boolean') throw new Error('ROMA atomizer is_atomic must be boolean')
-  if (typeof value.task_type !== 'string' || value.task_type.trim().length === 0) throw new Error('ROMA atomizer task_type must be non-empty')
-  if (typeof value.reason !== 'string' || value.reason.trim().length === 0) throw new Error('ROMA atomizer reason must be non-empty')
-  return { isAtomic: value.is_atomic, taskType: value.task_type.trim(), reason: value.reason.trim() }
+  if (value.node_type !== 'EXECUTE' && value.node_type !== 'PLAN') throw new Error('ROMA atomizer node_type must be EXECUTE or PLAN')
+  return { isAtomic: value.is_atomic, nodeType: value.node_type === 'EXECUTE' ? 'execute' : 'plan' }
+}
+
+function romaTaskType(value: unknown, subject: string): RomaTaskType {
+  if (typeof value !== 'string' || !ROMA_TASK_TYPES.some(taskType => taskType === value)) {
+    throw new Error(`${subject} task_type must be one of: ${ROMA_TASK_TYPES.join(', ')}`)
+  }
+  return value as RomaTaskType
 }
 
 /** Parse and validate a bounded, acyclic ROMA subtask plan. */
@@ -87,12 +95,12 @@ export function parseRomaPlan(text: string, maximum: number): readonly RomaPlann
     const item = record(candidate, `ROMA subtask ${index} must be an object`)
     if (typeof item.id !== 'string' || item.id.trim().length === 0) throw new Error(`ROMA subtask ${index} id must be non-empty`)
     if (typeof item.goal !== 'string' || item.goal.trim().length === 0) throw new Error(`ROMA subtask ${index} goal must be non-empty`)
-    if (typeof item.task_type !== 'string' || item.task_type.trim().length === 0) throw new Error(`ROMA subtask ${index} task_type must be non-empty`)
+    const taskType = romaTaskType(item.task_type, `ROMA subtask ${index}`)
     if (!Array.isArray(item.depends_on) || !item.depends_on.every(dependency => typeof dependency === 'string' && dependency.trim().length > 0)) {
       throw new Error(`ROMA subtask ${index} depends_on must contain non-empty ids`)
     }
     return {
-      id: item.id.trim(), goal: item.goal.trim(), taskType: item.task_type.trim(),
+      id: item.id.trim(), goal: item.goal.trim(), taskType,
       dependsOn: item.depends_on.map(dependency => (dependency as string).trim()),
     }
   })
@@ -133,7 +141,7 @@ async function atomize(
     ctx,
     parent,
     'You are ROMA\'s Atomizer. Decide whether one executor can directly complete the goal or recursive planning is necessary. Return only the requested JSON.',
-    `Goal:\n${goal}\n\nDependency context:\n${context || '(none)'}\n\nAtomic means a single focused executor can complete the goal with its available tools. Return exactly {"is_atomic":boolean,"task_type":"RETRIEVE|THINK|WRITE|CODE|OTHER","reason":"short reason"}.`,
+    `Goal:\n${goal}\n\nDependency context:\n${context || '(none)'}\n\nAtomic means a single focused executor can complete the goal with its available tools. Return exactly {"is_atomic":boolean,"node_type":"EXECUTE|PLAN"}.`,
     config.auxiliaryMaxTokens,
     signal,
   )
@@ -152,7 +160,7 @@ async function plan(
     ctx,
     parent,
     'You are ROMA\'s Planner. Decompose a non-atomic goal into a minimal acyclic graph of precise subtasks. Return JSON only.',
-    `Goal:\n${goal}\n\nDependency context:\n${context || '(none)'}\n\nReturn {"subtasks":[{"id":"0","goal":"imperative objective","task_type":"RETRIEVE|THINK|WRITE|CODE|OTHER","depends_on":[]}]} with 1-${config.maxChildren} subtasks. IDs must be unique. Dependencies may reference only listed IDs and must form a DAG. Prefer independent subtasks when possible; add dependencies only for real data flow. Do not execute the task.`,
+    `Goal:\n${goal}\n\nDependency context:\n${context || '(none)'}\n\nReturn {"subtasks":[{"id":"0","goal":"imperative objective","task_type":"RETRIEVE|WRITE|THINK|CODE_INTERPRET|IMAGE_GENERATION","depends_on":[]}]} with 1-${config.maxChildren} subtasks. IDs must be unique. Dependencies may reference only listed IDs and must form a DAG. Prefer independent subtasks when possible; add dependencies only for real data flow. Do not execute the task.`,
     config.auxiliaryMaxTokens,
     signal,
   )
@@ -164,7 +172,7 @@ async function executeAtomic(
   parent: Agent,
   nodeId: string,
   goal: string,
-  taskType: string,
+  taskType: RomaTaskType,
   dependencyInput: string,
   config: RomaConfig,
   signal: AbortSignal,
@@ -220,6 +228,7 @@ async function solveNode(
   ctx: Context,
   parent: Agent,
   goal: string,
+  taskType: RomaTaskType,
   dependencyInput: string,
   depth: number,
   parentId: string | null,
@@ -233,13 +242,13 @@ async function solveNode(
   budget.count += 1
   const forcedExecution = depth >= config.maxDepth
   const atomized = forcedExecution
-    ? { decision: { isAtomic: true, taskType: 'OTHER', reason: `maximum depth ${config.maxDepth} reached` }, provider: '', model: '' }
+    ? { decision: { isAtomic: true, nodeType: 'execute' as const }, provider: '', model: '' }
     : await atomize(ctx, parent, goal, dependencyInput, config, signal)
-  if (atomized.decision.isAtomic) {
-    const executed = await executeAtomic(ctx, parent, id, goal, atomized.decision.taskType, dependencyInput, config, signal)
+  if (atomized.decision.nodeType === 'execute') {
+    const executed = await executeAtomic(ctx, parent, id, goal, taskType, dependencyInput, config, signal)
     return {
-      id, parentId, depth, goal, taskType: atomized.decision.taskType, decision: 'execute', forcedExecution,
-      decisionReason: atomized.decision.reason, plan: [], children: [], result: executed.result,
+      id, parentId, depth, goal, taskType, decision: 'execute', forcedExecution,
+      plan: [], children: [], result: executed.result,
       executorSessionId: executed.sessionId, provider: atomized.provider, model: atomized.model,
     }
   }
@@ -252,7 +261,7 @@ async function solveNode(
     if (readyIds.length === 0) throw new Error('ROMA planner produced an unschedulable dependency graph')
     const ready = readyIds.map(taskId => pending.get(taskId) as RomaPlannedTask)
     const nodes = await inBatches(ready, config.maxParallel, async task => await solveNode(
-      ctx, parent, task.goal, dependencyContext(task, completed), depth + 1, id, config, budget, signal,
+      ctx, parent, task.goal, task.taskType, dependencyContext(task, completed), depth + 1, id, config, budget, signal,
     ))
     ready.forEach((task, index) => {
       pending.delete(task.id)
@@ -261,8 +270,8 @@ async function solveNode(
   }
   const aggregated = await aggregate(ctx, parent, goal, subtasks, completed, config, signal)
   return {
-    id, parentId, depth, goal, taskType: atomized.decision.taskType, decision: 'plan', forcedExecution,
-    decisionReason: atomized.decision.reason, plan: subtasks,
+    id, parentId, depth, goal, taskType, decision: 'plan', forcedExecution,
+    plan: subtasks,
     children: subtasks.map(task => completed.get(task.id) as RomaNode), result: aggregated.result,
     provider: aggregated.provider, model: aggregated.model,
   }
@@ -282,7 +291,7 @@ function runTool(ctx: Context, config: RomaConfig, completed: WeakSet<Agent>): T
       const parent = requireAgent(exec)
       if (completed.has(parent)) throw new Error('ROMA has already completed this task')
       const budget: NodeBudget = { nextId: 1, count: 0 }
-      const root = await solveNode(ctx, parent, originalTask(parent), '', 0, null, config, budget, exec.signal)
+      const root = await solveNode(ctx, parent, originalTask(parent), 'THINK', '', 0, null, config, budget, exec.signal)
       completed.add(parent)
       exec.concludeTurn()
       return { answer: root.result, nodeCount: budget.count, root }

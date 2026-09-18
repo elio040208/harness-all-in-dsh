@@ -15,7 +15,7 @@ ROMA 把工作表示为嵌套依赖 DAG 中的不可变 task node。每个 node 
 
 ## DSH 实现
 
-`roma_solve` 是唯一 parent coordinator action。Atomizer、planner 和 aggregator 使用父会话当前 DSH 模型路由。Atomic node 作为带 scoped tool 的隔离 DSH child Session 运行。父 tool result 持久化完整递归树、decision、依赖 plan、child Session id 和 aggregate result。
+`roma_solve` 是唯一 parent coordinator action。Atomizer、planner 和 aggregator 使用父会话当前 DSH 模型路由。Atomizer 返回官方的 `is_atomic` 和 `PLAN` 或 `EXECUTE` 输出，不分配 task type。Planner 分配 ROMA 的五种 task type 之一，该类型在 child 的递归 atomize 和执行过程中持续传播；root 使用 ROMA 的默认类型 `THINK`。Atomic node 作为带 scoped tool 的隔离 DSH child Session 运行。父 tool result 持久化完整递归树、decision、task type、依赖 plan、child Session id 和 aggregate result。
 
 ## 共享组件
 

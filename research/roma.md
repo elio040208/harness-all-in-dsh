@@ -16,7 +16,7 @@ ROMA represents work as immutable task nodes in nested dependency DAGs. Every no
 
 ## DSH implementation
 
-`roma_solve` is the single parent coordinator action. Atomizer, planner, and aggregator calls use the parent conversation's routed DSH model. Atomic nodes run as isolated DSH child Sessions with scoped tools. The parent tool result persists the complete recursive tree, decisions, dependency plans, child Session ids, and aggregate results.
+`roma_solve` is the single parent coordinator action. Atomizer, planner, and aggregator calls use the parent conversation's routed DSH model. The Atomizer returns the official `is_atomic` and `PLAN` or `EXECUTE` outputs without assigning a task type. The Planner assigns one of ROMA's five task types, and that type follows the child through recursive atomization and execution; the root uses ROMA's `THINK` default. Atomic nodes run as isolated DSH child Sessions with scoped tools. The parent tool result persists the complete recursive tree, decisions, task types, dependency plans, child Session ids, and aggregate results.
 
 ## Shared components
 
