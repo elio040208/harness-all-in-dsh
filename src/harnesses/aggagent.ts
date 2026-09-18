@@ -24,8 +24,6 @@ const AGGAGENT_SOURCE = 'harness-all-in-dsh:aggagent'
 
 interface AggregationState {
   readonly trajectories: readonly AgentTrajectory[]
-  readonly inspectedSolutions: Set<number>
-  verifiedTrajectory: boolean
 }
 
 /** AggAgent rollout count and child-provider selection. */
@@ -76,11 +74,6 @@ async function runRollout(
   })
 }
 
-function hasDisagreement(state: AggregationState): boolean {
-  const normalized = trajectorySolutions(state.trajectories).map(entry => entry.content.trim()).filter(Boolean)
-  return new Set(normalized).size > 1
-}
-
 function renderPrompt(agent: Agent | undefined, states: WeakMap<Agent, AggregationState>, config: AggAgentConfig): string {
   if (agent?.session.header.parentSession !== undefined) return ''
   const count = agent === undefined ? config.rolloutCount : states.get(agent)?.trajectories.length ?? config.rolloutCount
@@ -110,11 +103,6 @@ function getSolutionTool(states: WeakMap<Agent, AggregationState>): ToolDefiniti
       if (state === undefined) throw new Error('generate AggAgent rollouts first')
       const value = inputRecord(args).trajectoryId
       const id = value === undefined ? undefined : integer(value, 'trajectoryId')
-      if (id === undefined) {
-        for (const item of state.trajectories) state.inspectedSolutions.add(item.id)
-      } else {
-        state.inspectedSolutions.add(id)
-      }
       return { solutions: trajectorySolutions(state.trajectories, id) }
     },
   }
@@ -138,7 +126,6 @@ function searchTool(states: WeakMap<Agent, AggregationState>): ToolDefinition {
       if (input.role !== undefined && input.role !== 'tool' && input.role !== 'assistant') throw new Error('role must be tool or assistant')
       const k = input.k === undefined ? 5 : integer(input.k, 'k')
       if (k < 1 || k > 10) throw new Error('k must be 1-10')
-      state.verifiedTrajectory = true
       return { matches: searchTrajectory(trajectory(state, id), input.query, input.role, k) }
     },
   }
@@ -159,7 +146,6 @@ function getSegmentTool(states: WeakMap<Agent, AggregationState>): ToolDefinitio
       const id = integer(input.trajectoryId, 'trajectoryId')
       const start = integer(input.startStep, 'startStep')
       const end = integer(input.endStep, 'endStep')
-      state.verifiedTrajectory = true
       return { segment: trajectorySegment(trajectory(state, id), start, end) }
     },
   }
@@ -179,8 +165,6 @@ function finishTool(states: WeakMap<Agent, AggregationState>): ToolDefinition {
     async execute(args, exec) {
       const state = states.get(requireAgent(exec, FINISH_TOOL))
       if (state === undefined) throw new Error('generate AggAgent rollouts first')
-      if (state.inspectedSolutions.size !== state.trajectories.length) throw new Error(`inspect every final solution with ${GET_SOLUTION_TOOL} before finishing`)
-      if (hasDisagreement(state) && !state.verifiedTrajectory) throw new Error(`candidate solutions disagree; verify raw evidence with ${SEARCH_TOOL} or ${GET_SEGMENT_TOOL}`)
       const input = inputRecord(args)
       if (typeof input.solution !== 'string' || typeof input.reason !== 'string' || input.reason.trim().length === 0) throw new Error('solution and reason must be non-empty strings')
       const match = input.solution.match(/^\s*<explanation>([\s\S]+)<\/explanation>\s*<answer>([\s\S]+)<\/answer>\s*$/u)
@@ -213,7 +197,7 @@ export function applyAggAgent(ctx: Context, config: AggAgentConfig): void {
       const failures = settled.filter((entry): entry is PromiseRejectedResult => entry.status === 'rejected')
       if (failures.length > 0) throw new AggregateError(failures.map(entry => entry.reason), `${failures.length} AggAgent rollout(s) failed`)
       const trajectories = settled.map(entry => (entry as PromiseFulfilledResult<AgentTrajectory>).value)
-      state = { trajectories, inspectedSolutions: new Set(), verifiedTrajectory: false }
+      state = { trajectories }
       states.set(agent, state)
     }
     const decision = await next()

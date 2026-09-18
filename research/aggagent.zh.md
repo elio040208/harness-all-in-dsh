@@ -16,7 +16,7 @@ AggAgent 先生成互相独立、可以使用工具的完整 rollout，再向独
 
 协调器通过 `spawn` provider 并发启动四个全新 DSH 子 Agent。每个 rollout 使用隔离 Session，继承父模型路由，接收独立任务 prompt，并保留普通任务工具；四个 aggregator tool 被拒绝。父 Session 记录子 Session id，插件消息记录 terminal status、step count 和紧凑 metadata。
 
-Aggregator 保持在标准 DSH Agent loop 内。四个工具对应官方 `get_solution`、`search_trajectory`、`get_segment` 和 `finish`。共享 trajectory 组件从子 Session event 投影结构化 assistant call 和 tool result，提供 ROUGE-L 搜索、字数限制和步数限制。Final solution 不同时，aggregator 必须先检查 raw trajectory evidence，`finish` 才会接受结果。
+Aggregator 保持在标准 DSH Agent loop 内。四个工具对应官方 `get_solution`、`search_trajectory`、`get_segment` 和 `finish`。共享 trajectory 组件从子 Session event 投影结构化 assistant call 和 tool result，提供 ROUGE-L 搜索、字数限制和步数限制。官方 procedure 保持为 prompt 指引：先查看 solution，再用 raw observation 验证分歧，然后 finish。Tool 会验证 `<explanation>` 和 `<answer>` 格式并结束 parent turn，但不额外添加 call-order 硬门槛。
 
 ## 共享组件
 
