@@ -85,7 +85,7 @@ export function apply(ctx: Context, config: Config): void {
       applyFlashSearcher(ctx, { summaryInterval: config.summaryInterval ?? 8 })
       return
     case 'gam':
-      applyGam(ctx, { summaryInterval: config.summaryInterval ?? 8, reorgInterval: config.reorgInterval ?? 4 })
+      applyGam(ctx, { reorgInterval: config.reorgInterval ?? 4 })
       return
     case 'memobrain':
       ctx.inject(['llm', 'tokenMeter'], (ready) => {

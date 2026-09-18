@@ -7,5 +7,4 @@
   name: harness-all-in-dsh
   config:
     harness: gam
-    summaryInterval: 8
     reorgInterval: 4

@@ -14,13 +14,13 @@ GAM 把轻量记忆和无损历史分开。Memorizer 为每个输入生成简短
 
 ## DSH 实现
 
-GAM 组合现有 Flash-Searcher controller，不复制 DAG planner。每个非管理工具结果都会成为完整、由 Session 派生的 page。新 page 缺少 abstract 时，runtime context 会建议调用 `gam_memorize_pages`，为每个 pending page 提交一个事实性、自包含 abstract，但不会阻止普通任务工具。Page id 和 abstract catalogue 都是从工具 call/result 重建的持久 projection state。
+GAM 运行在 DSH 原生的直接 Agent loop 上，不会叠加其他 Harness 的 planner。每个非管理工具结果都会成为完整、由 Session 派生的 page。新 page 缺少 abstract 时，runtime context 会建议调用 `gam_memorize_pages`，为每个 pending page 提交一个事实性、自包含 abstract，但不会阻止普通任务工具。Page id 和 abstract catalogue 都是从工具 call/result 重建的持久 projection state。
 
 每四个 action step，runtime context 会建议执行一次 memory integration。`gam_search_pages` 支持对完整内容进行精确关键词和 page id 检索；`gam_integrate_memory` 保存整合结果及其来源 page id。维护 pending 时普通任务工具仍可使用。随后插件把完整非 system surface 替换为包含原始任务和 integrated memory 的用户 checkpoint。原始 Session event 和 page projection 仍可用于回放和后续检索。
 
 ## 共享组件
 
-GAM 复用 Flash-Searcher 的 DAG、review projection、prompt registry 和五槽 DSH scheduler。Page projection 和显式 search/integration tool 构成可供其他 memory Harness 复用的 page-store 模式。
+GAM 复用通用 prompt registry 和 protocol admission layer。Page projection 和显式 search/integration tool 构成可供其他 memory Harness 复用的 page-store 模式。
 
 ## 有意差异
 

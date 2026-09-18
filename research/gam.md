@@ -14,13 +14,13 @@ GAM separates lightweight memory from lossless history. The Memorizer generates 
 
 ## DSH implementation
 
-GAM composes the implemented Flash-Searcher controller rather than duplicating its DAG planner. Every non-management tool result becomes a complete Session-derived page. When new pages lack abstracts, runtime context advises `gam_memorize_pages`, which accepts exactly one factual, self-contained abstract for every pending page without blocking ordinary task tools. The page id and abstract catalogue are durable projection state reconstructed from tool call/result events.
+GAM runs on DSH's native direct Agent loop. It does not add a planner from another Harness. Every non-management tool result becomes a complete Session-derived page. When new pages lack abstracts, runtime context advises `gam_memorize_pages`, which accepts exactly one factual, self-contained abstract for every pending page without blocking ordinary task tools. The page id and abstract catalogue are durable projection state reconstructed from tool call/result events.
 
 Every four action steps, runtime context advises a memory-integration pass. `gam_search_pages` supports exact keyword retrieval and direct page ids over full content, and `gam_integrate_memory` records the consolidated factual result and its source page ids. Ordinary task tools remain callable while maintenance is pending. On the following pre-step, the plugin replaces the complete non-system Session surface with a user-role checkpoint containing the exact original task and integrated memory. The raw Session events and page projection remain available for replay and later retrieval even though the model's working history has been reset.
 
 ## Shared components
 
-GAM reuses Flash-Searcher's validated DAG, review projection, prompt registry, and five-slot DSH scheduler. Its page projection and explicit search/integration tools establish the common page-store pattern that later memory Harnesses can extend without embedding another Agent loop.
+GAM reuses the common prompt registry and protocol admission layer. Its page projection and explicit search/integration tools establish the common page-store pattern that later memory Harnesses can extend without embedding another Agent loop.
 
 ## Intentional deviations
 

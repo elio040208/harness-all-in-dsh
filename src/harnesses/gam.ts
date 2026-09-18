@@ -5,7 +5,6 @@ import type { SessionEvent } from '@deepseek-ai/dsh-session'
 import type { ProjectionDefinition } from '@deepseek-ai/dsh-session-projection'
 import type { ToolDefinition, ToolExecution } from '@deepseek-ai/dsh-tools'
 import { z } from 'zod'
-import { applyFlashSearcher } from './flash-searcher.js'
 import { contentText } from '../runtime/content.js'
 import { registerHarnessPrompt } from '../runtime/prompt.js'
 import { installHarnessProtocol, isHarnessProtocolDenialResult } from '../runtime/protocol.js'
@@ -83,7 +82,7 @@ function nonEmpty(value: unknown): value is string {
 }
 
 function managementTool(name: string): boolean {
-  return name === 'submit_dag_plan' || name === 'record_dag_review' || name.startsWith('gam_')
+  return name.startsWith('gam_')
 }
 
 function abstractEntries(value: unknown, pages: readonly GamPage[]): readonly { pageId: string; abstract: string }[] | undefined {
@@ -275,7 +274,6 @@ function integrateTool(ctx: Context): ToolDefinition {
 
 /** GAM cadence and retained recent raw surface units. */
 export interface GamConfig {
-  readonly summaryInterval: number
   readonly reorgInterval: number
 }
 
@@ -297,7 +295,7 @@ export function renderGamContext(
     ? `Memory abstracts are pending. Call ${MEMORIZE_TOOL} soon with one self-contained factual abstract for each pending page: ${missing.map(page => page.id).join(', ')}.`
     : reorgDue(state, interval)
       ? `GAM research is due. Use ${SEARCH_TOOL} over the abstract catalogue and call ${INTEGRATE_TOOL} soon with a consolidated factual memory and the supporting page ids.`
-      : 'Continue the DAG-directed task. Search the page store whenever older exact evidence is needed.'
+      : 'Continue the task. Search the page store whenever older exact evidence is needed.'
   return `GAM state.\n\n${directive}\n\nIntegrated memory:\n${integrated}\n\nMemory catalogue:\n${catalog}`
 }
 
@@ -321,10 +319,9 @@ export function renderGamCheckpoint(state: GamState): string {
   return `Original task:\n${state.originalTask ?? '(unavailable)'}\n\nThe task progress has been reorganized by GAM. The actions summarized below are already complete: do not repeat them. Treat this integrated memory as established context and continue from the next unresolved action.\n\n<gam-integrated-memory>\n${state.integratedMemory ?? '(none yet)'}\n</gam-integrated-memory>`
 }
 
-/** Install Flash planning plus GAM Memorizer, Researcher tools, and surface folding. */
+/** Install GAM Memorizer, Researcher tools, and surface folding on the native Agent loop. */
 export function applyGam(ctx: Context, config: GamConfig): void {
   if (!Number.isSafeInteger(config.reorgInterval) || config.reorgInterval < 1) throw new Error('gam reorgInterval must be a positive safe integer')
-  applyFlashSearcher(ctx, { summaryInterval: config.summaryInterval })
   ctx.sessionProjections.register(gamProjectionDefinition)
   ctx.tools.register(memorizeTool(ctx))
   ctx.tools.register(searchTool(ctx))

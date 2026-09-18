@@ -95,10 +95,11 @@ describe('GAM Harness', () => {
     expect(state.actionSteps).toBe(0)
   })
 
-  it('configures four-step research and five parallel action slots', () => {
+  it('configures four-step research on the direct single-action loop', () => {
     const profile = readFileSync(new URL('../profiles/gam.cordis.patch.yml', import.meta.url), 'utf8')
     expect(profile).toContain('harness: gam')
     expect(profile).toContain('reorgInterval: 4')
-    expect(profile).toContain('maxParallelToolCalls: 5')
+    expect(profile).toContain('maxParallelToolCalls: 1')
+    expect(profile).not.toContain('summaryInterval')
   })
 })
