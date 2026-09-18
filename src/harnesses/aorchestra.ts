@@ -67,8 +67,9 @@ export function aorchestraToolCatalogue(ctx: Context, agent: Agent): readonly Se
 }
 
 function selectedTools(value: unknown, catalogue: readonly SearchableTool[]): readonly string[] {
-  if (!Array.isArray(value) || value.length === 0 || !value.every(item => typeof item === 'string' && item.trim().length > 0)) {
-    throw new Error('tools must be a non-empty array of tool names')
+  if (value === undefined) return []
+  if (!Array.isArray(value) || !value.every(item => typeof item === 'string' && item.trim().length > 0)) {
+    throw new Error('tools must be an array of tool names when provided')
   }
   const names = [...new Set(value.map(item => (item as string).trim()))]
   const available = new Set(catalogue.map(tool => tool.name))
@@ -112,9 +113,9 @@ function delegateTool(ctx: Context, config: AOrchestraConfig, states: WeakMap<Ag
     parameters: { type: 'object', additionalProperties: false, properties: {
       instruction: { type: 'string', minLength: 1 },
       context: { type: 'string' },
-      tools: { type: 'array', items: { type: 'string' }, minItems: 1 },
+      tools: { type: 'array', items: { type: 'string' } },
       model: { type: 'string', enum: [...config.models] },
-    }, required: ['instruction', 'context', 'tools', 'model'] },
+    }, required: ['instruction', 'model'] },
     output: {
       schema: { type: 'object', additionalProperties: true },
       render: (_args, value) => [{ type: 'text', text: JSON.stringify(value) }],
@@ -127,7 +128,9 @@ function delegateTool(ctx: Context, config: AOrchestraConfig, states: WeakMap<Ag
       if (state.delegations.length >= config.maxDelegations) throw new Error(`AOrchestra allows at most ${config.maxDelegations} delegations`)
       const input = inputRecord(args)
       const instruction = nonEmptyString(input.instruction, 'instruction')
-      const context = typeof input.context === 'string' ? input.context.trim() : (() => { throw new Error('context must be a string') })()
+      const context = input.context === undefined
+        ? ''
+        : typeof input.context === 'string' ? input.context.trim() : (() => { throw new Error('context must be a string') })()
       const model = nonEmptyString(input.model, 'model')
       if (!config.models.includes(model)) throw new Error(`model must be one of: ${config.models.join(', ')}`)
       const tools = selectedTools(input.tools, aorchestraToolCatalogue(ctx, parent))
@@ -141,10 +144,10 @@ function delegateTool(ctx: Context, config: AOrchestraConfig, states: WeakMap<Ag
         signal: exec.signal,
         provider: config.subagentProvider,
         deniedTools: [],
-        allowedTools: tools,
+        ...(tools.length === 0 ? {} : { allowedTools: tools }),
         agentOptions: { provider, model },
         persona: 'You are a dynamically configured AOrchestra sub-agent. Follow only the delegated instruction, use only your assigned tools, treat supplied context as potentially incomplete prior findings, verify observations, and return a standalone result. Do not delegate.',
-        prompt: `Instruction:\n${instruction}\n\nCurated context:\n${context || '(none)'}\n\nAssigned tools:\n${tools.join(', ')}`,
+        prompt: `Instruction:\n${instruction}\n\nCurated context:\n${context || '(none)'}\n\nAssigned tools:\n${tools.length === 0 ? '(all available task tools)' : tools.join(', ')}`,
       })
       const delegation: AOrchestraDelegation = {
         attempt, tuple, result: finalResult(trajectory), traceSummary: aorchestraTraceSummary(trajectory),
@@ -159,10 +162,10 @@ function delegateTool(ctx: Context, config: AOrchestraConfig, states: WeakMap<Ag
 function completeTool(states: WeakMap<Agent, AOrchestraState>): ToolDefinition {
   return {
     name: COMPLETE_TOOL,
-    description: 'Complete AOrchestra with a standalone answer after reviewing all dynamic delegation results.',
+    description: 'Complete AOrchestra with a standalone answer when the task is resolved.',
     parameters: { type: 'object', additionalProperties: false, properties: {
-      answer: { type: 'string', minLength: 1 }, reasoning: { type: 'string', minLength: 1 },
-    }, required: ['answer', 'reasoning'] },
+      answer: { type: 'string', minLength: 1 },
+    }, required: ['answer'] },
     output: {
       schema: { type: 'object', additionalProperties: true },
       render: (_args, value) => [{ type: 'text', text: typeof value === 'object' && value !== null && 'answer' in value ? String(value.answer) : '' }],
@@ -171,14 +174,12 @@ function completeTool(states: WeakMap<Agent, AOrchestraState>): ToolDefinition {
     async execute(args, exec) {
       const parent = requireAgent(exec, COMPLETE_TOOL)
       const state = stateOf(states, parent)
-      if (state.delegations.length === 0) throw new Error(`AOrchestra must call ${DELEGATE_TOOL} before completing`)
       if (state.completed) throw new Error('AOrchestra has already completed this task')
       const input = inputRecord(args)
       const answer = nonEmptyString(input.answer, 'answer')
-      const reasoning = nonEmptyString(input.reasoning, 'reasoning')
       state.completed = true
       exec.concludeTurn()
-      return { answer, reasoning, delegations: state.delegations }
+      return { answer, delegations: state.delegations }
     },
   }
 }
@@ -191,7 +192,7 @@ function toolCatalogueText(ctx: Context, agent: Agent | undefined): string {
 
 function coordinatorPrompt(agent: Agent | undefined): string {
   if (agent?.session.header.parentSession !== undefined) return ''
-  return `You are the AOrchestra MainAgent. Solve the task through dynamic sub-agents, not with ordinary tools yourself. For each remaining subtask call ${DELEGATE_TOOL} with the complete four-tuple: a specific instruction I, only relevant prior context C, the smallest sufficient tool-name whitelist T, and one allowed model M. Review every returned result and trace summary. Delegate only remaining work; do not repeat completed work. When evidence is sufficient, call ${COMPLETE_TOOL} with a standalone answer.`
+  return `You are the AOrchestra MainAgent. Solve the task through dynamic sub-agents, not with ordinary tools yourself. For each remaining subtask call ${DELEGATE_TOOL} with a specific instruction I and one allowed model M. Add only relevant prior context C when useful. Add the smallest sufficient tool-name whitelist T when the child should not receive every task tool. Review every returned result and trace summary. Delegate only remaining work; do not repeat completed work. When evidence is sufficient, call ${COMPLETE_TOOL} with a standalone answer.`
 }
 
 /** Render the current delegation budget and child capability catalogue. */

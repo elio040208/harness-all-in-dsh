@@ -5,7 +5,7 @@ import type { SessionId } from '@deepseek-ai/dsh-session'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime from '@deepseek-ai/dsh-tools'
 import { describe, expect, it } from 'vitest'
-import { aorchestraToolCatalogue, aorchestraTraceSummary, renderAOrchestraContext, trajectoryFinalAnswer } from '../src/index.js'
+import { aorchestraToolCatalogue, aorchestraTraceSummary, applyAOrchestra, renderAOrchestraContext, trajectoryFinalAnswer } from '../src/index.js'
 import type { AgentTrajectory, AOrchestraConfig } from '../src/index.js'
 
 const trajectory: AgentTrajectory = {
@@ -57,6 +57,27 @@ describe('AOrchestra Harness', () => {
       })
       const agent = { id: 'parent' as SessionId } as Agent
       expect(aorchestraToolCatalogue(ctx, agent).map(tool => tool.name)).toEqual(['bash'])
+    } finally {
+      await ctx.fiber.dispose()
+    }
+  })
+
+  it('keeps the official optional delegation fields and answer-only completion payload', async () => {
+    const ctx = new Context()
+    try {
+      await ctx.plugin(SystemPrompt, {})
+      await ctx.plugin(ToolRuntime)
+      applyAOrchestra(ctx, {
+        subagentProvider: 'spawn', modelProvider: '', models: ['deepseek-v4.1-flash'],
+        maxDelegations: 5, controllerReminderLimit: 2,
+      })
+      const agent = { id: 'parent' as SessionId } as Agent
+      const schemas = new Map(ctx.tools.schemas(agent).map(tool => [tool.name, tool.parameters]))
+      expect(schemas.get('aorchestra_delegate')).toMatchObject({ required: ['instruction', 'model'] })
+      expect(schemas.get('aorchestra_complete')).toMatchObject({
+        required: ['answer'], properties: { answer: { type: 'string' } },
+      })
+      expect(schemas.get('aorchestra_complete')).not.toHaveProperty('properties.reasoning')
     } finally {
       await ctx.fiber.dispose()
     }

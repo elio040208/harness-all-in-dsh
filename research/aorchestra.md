@@ -16,7 +16,7 @@ AOrchestra treats a child Agent as a runtime-created four-tuple `phi = <I,C,T,M>
 
 ## DSH implementation
 
-`aorchestra_delegate` exposes all four tuple fields explicitly. It validates the model against configured choices and tools against the current DSH request catalogue, then starts a fresh DSH child Session with the selected model route, a scoped tool allowlist, a subtask persona, and only the selected context. `aorchestra_complete` records the standalone answer and all delegation metadata in the parent Session result.
+`aorchestra_delegate` exposes all four tuple fields. As in the official tool, instruction and model are required while context and tools are optional; omitting tools leaves the child catalogue unfiltered. Provided model and tool choices are validated against the configured choices and current DSH request catalogue. The tool then starts a fresh DSH child Session with the selected model route, optional scoped tool allowlist, subtask persona, and selected context. `aorchestra_complete` accepts the official answer-only payload and records the standalone answer plus all delegation metadata in the parent Session result. The coordinator prompt encourages delegation, but completion is not guarded by an extra call-order requirement absent from the official tool.
 
 ## Shared components
 

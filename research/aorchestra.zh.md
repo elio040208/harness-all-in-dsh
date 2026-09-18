@@ -15,7 +15,7 @@ AOrchestra 把子 Agent 表示为运行时创建的四元组 `phi = <I,C,T,M>`�
 
 ## DSH 实现
 
-`aorchestra_delegate` 显式暴露四个 tuple field。它会根据配置验证 model choice，根据当前 DSH request catalogue 验证 tool，然后以所选模型路由、scoped tool allowlist、subtask persona 和指定 context 启动全新 DSH child Session。`aorchestra_complete` 把独立答案和全部 delegation metadata 写入父 Session result。
+`aorchestra_delegate` 暴露四个 tuple field。与官方 tool 一致，instruction 和 model 必填，context 和 tools 可选；省略 tools 时不过滤 child tool catalogue。已提供的 model 和 tool 会根据配置与当前 DSH request catalogue 验证。随后工具以所选模型路由、可选 scoped tool allowlist、subtask persona 和指定 context 启动全新 DSH child Session。`aorchestra_complete` 接受官方的 answer-only 载荷，并把独立答案与全部 delegation metadata 写入父 Session result。Coordinator prompt 仍建议先委派，但 completion 不再受官方 tool 中不存在的 call-order 硬门槛限制。
 
 ## 共享组件
 
